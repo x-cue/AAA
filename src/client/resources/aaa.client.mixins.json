@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"package": "com.xcue.mixin.client",
+	"compatibilityLevel": "JAVA_17",
+	"client": [
+		"ClientPlayerEntityMixin",
+		"ClientPlayNetworkHandlerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
