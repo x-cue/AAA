@@ -2,6 +2,8 @@ package com.xcue;
 
 import com.xcue.lib.AAAMod;
 import com.xcue.mods.notafk.NotAfkMod;
+import com.xcue.mods.notahflipper.NotAhFlipperMod;
+import com.xcue.mods.notpeacefulskilling.NotPeacefulSkillingMod;
 import net.fabricmc.api.ClientModInitializer;
 
 import java.util.LinkedList;
@@ -20,7 +22,9 @@ public class AAAClient implements ClientModInitializer {
 		{{
 			// This is a fancy way to create a new collection where you can quickly
 			// Reference it. Outside of these braces, you would need to type mods.add
-			add(NotAfkMod::new);
+			//add(NotAfkMod::new);
+			//add(NotAhFlipperMod::new);
+			add(NotPeacefulSkillingMod::new);
 			//   ^ Shorthand lambda expression/func --> same as doing () -> new NotAfkMod()
 			// You can use lambdas like that where you reference a class and which method to call
 			// It's very useful!
