@@ -1,5 +1,6 @@
 package com.xcue.mods.notafk;
 
+import com.xcue.lib.AAAMod;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
@@ -16,7 +17,7 @@ import java.util.regex.Pattern;
 
 
 
-public class NotAfkMod implements ClientModInitializer {
+public class NotAfkMod implements AAAMod {
     boolean autoClickEnabled = false;
     int ticks = 0;
 
@@ -29,7 +30,7 @@ public class NotAfkMod implements ClientModInitializer {
         return matcher.matches();
     }
     @Override
-    public void onInitializeClient() {
+    public void init() {
 
 
         AttackEntityCallback.EVENT.register(((player1, world, hand, entity, hitResult) -> {
