@@ -1,6 +1,6 @@
 package com.xcue.mixin.client;
 
-import com.xcue.mixin.client.extensions.ClientPlayerEntityExtension;
+import com.xcue.lib.extensions.ClientPlayerEntityExtension;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.Unique;
 import java.util.List;
 
 @Mixin(ClientPlayerEntity.class)
-public class ClientPlayerEntityMixin implements ClientPlayerEntityExtension {
+public abstract class ClientPlayerEntityMixin implements ClientPlayerEntityExtension {
     @Unique
     @Override
     public <T extends EntityType<?>> List<Entity> aAA$getNearbyEntities(int radius, T entityType) {

@@ -1,4 +1,4 @@
-package com.xcue.mixin.client.extensions;
+package com.xcue.lib.extensions;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
