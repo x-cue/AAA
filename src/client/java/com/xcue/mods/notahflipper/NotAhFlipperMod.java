@@ -19,11 +19,15 @@ import java.util.List;
 public class NotAhFlipperMod implements AAAMod {
 //    ClientPlayerEntity player = MinecraftClient.getInstance().player;
 //    MinecraftClient client = MinecraftClient.getInstance();
+    private boolean hasRead = false;
+
     @Override
     public void init() {
+        AuctionHouse.enable();
 
         ClientTickEvents.END_CLIENT_TICK.register(client ->{
-            if(!scanAH.isEnabled() || !scanAH.isOpen(client)) return;
+            if(!AuctionHouse.isEnabled()) return;
+            if (hasRead) return;
 
             ClientPlayerEntity player = client.player;
             if(player != null){

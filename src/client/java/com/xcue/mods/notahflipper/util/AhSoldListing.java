@@ -11,104 +11,118 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class AhSoldListing {
-        private final List<Text> lore;
-        private final Text name;
-        private final double soldPrice;
-        private final int amount;
-        private final String sellerName;
-        private final String buyerName;
-        private final ZonedDateTime dateListed;
-        private final ZonedDateTime dateSold;
-        private final ItemStack item;
+    private final List<Text> lore;
+    private final Text name;
+    private final double soldPrice;
+    private final int amount;
+    private final String sellerName;
+    private final String buyerName;
+    private final ZonedDateTime dateListed;
+    private final ZonedDateTime dateSold;
+    private final ItemStack item;
 
-        public AhSoldListing(ItemStack item) throws ParseException, NumberFormatException {
-                // Parse item from here
-                this.item = item;
-                this.lore = com.xcue.lib.items.ItemStack.getLore(item);
-                this.name = item.getName();
-                this.amount = item.getCount();
+    public AhSoldListing(ItemStack item) throws ParseException, NumberFormatException {
 
-                // Get other fields from the item's lore
-                List<Text> loreReversed = lore;
-                Collections.reverse(loreReversed);
+        // Parse item from here
+        this.item = item;
+        this.amount = item.getCount();
+        this.name = item.getName();
+        this.lore = com.xcue.lib.items.ItemStack.getLore(item);
+        if (lore.size() <= 7) throw new ParseException("Item lore is too short to be AhSoldListing", 0);
 
-                this.sellerName = parseItemField(loreReversed.get(4).getString(), "Seller");
-                this.buyerName = parseItemField(loreReversed.get(3).getString(), "Buyer");
-                this.soldPrice = Double.parseDouble(
-                        parseItemField(loreReversed.get(2).getString(), "Price")
-                                .replace("$", "")
-                                .replace(",", "")
-                );
+        // Get other fields from the item's lore
+        List<Text> loreReversed = this.lore;
+        Collections.reverse(loreReversed);
 
-                // Get from lore
-                long secondsSinceSold = getSecondsSinceSold(loreReversed.get(1).getString());
+        this.sellerName = parseItemField(loreReversed.get(4).getString(), "Seller");
+        this.buyerName = parseItemField(loreReversed.get(3).getString(), "Buyer");
+        this.soldPrice = Double.parseDouble(
+                parseItemField(loreReversed.get(2).getString(), "Price")
+                        .replace("$", "")
+                        .replace(",", "")
+        );
 
-                this.dateSold = ZonedDateTime.now().minusSeconds(secondsSinceSold);
-                this.dateListed = null;
+        // Get from lore
+        long secondsSinceSold = getSecondsSinceSold(loreReversed.get(1).getString());
+
+        this.dateSold = ZonedDateTime.now().minusSeconds(secondsSinceSold);
+        this.dateListed = null;
+    }
+
+    private long getSecondsSinceSold(String str) {
+        //examples of string before and after replace :::
+        // "10d 2h 3m 20s" = "10 2 3 20"
+        // "12h 10m 10s" = "12 10 10"
+        // "5m 20s" = "5 20"
+        // "5h 10s" = "5 10" ------ on the off chance there is an item exactly at 5 hours and no minutes. what will
+        // happen?
+        Pattern pat = Pattern.compile("(\\d+)d|(\\d+)h|(\\d+)m|(\\d+)s");
+        Matcher matcher = pat.matcher(str);
+
+        long numDays = 0, numHours = 0, numMinutes = 0, numSeconds = 0;
+
+        while (matcher.find()) {
+            if (matcher.group(1) != null) {
+                numDays = Long.parseLong(matcher.group(1));
+            } else if (matcher.group(2) != null) {
+                numHours = Long.parseLong(matcher.group(2));
+            } else if (matcher.group(3) != null) {
+                numMinutes = Long.parseLong(matcher.group(3));
+            } else if (matcher.group(4) != null) {
+                numSeconds = Long.parseLong(matcher.group(4));
+            }
         }
 
-        private long getSecondsSinceSold(String str) {
-                //examples of string before and after replace :::
-                // "10d 2h 3m 20s" = "10 2 3 20"
-                // "12h 10m 10s" = "12 10 10"
-                // "5m 20s" = "5 20"
-                // "5h 10s" = "5 10" ------ on the off chance there is an item exactly at 5 hours and no minutes. what will happen?
-                Pattern pat = Pattern.compile("(\\d+)d|(\\d+)h|(\\d+)m|(\\d+)s");
-                Matcher matcher = pat.matcher(str);
+        return (numSeconds + (numMinutes * 60) + (numHours * 3600) + (numDays * 86400));
+    }
 
-                long numDays = Long.parseLong(matcher.group(1) != null ? matcher.group(1) : "0");
-                long numHours = Long.parseLong(matcher.group(2) != null ? matcher.group(2) : "0");
-                long numMinutes = Long.parseLong(matcher.group(3) != null ? matcher.group(3) : "0");
-                long numSeconds = Long.parseLong(matcher.group(4) != null ? matcher.group(4) : "0");
+    private String parseItemField(String str, String field, String regex) throws ParseException {
+        Pattern pat = Pattern.compile(String.format(regex, field));
 
-                return (numSeconds + (numMinutes * 60) + (numHours * 3600) + (numDays * 86400));
-        }
+        Matcher matcher = pat.matcher(str);
 
-        private String parseItemField(String str, String field, String regex) throws ParseException {
-                Pattern pat = Pattern.compile(String.format(regex, field));
+        if (!matcher.matches()) throw new ParseException("Could not find " + field + " name", 0);
 
-                Matcher matcher = pat.matcher(str);
+        return matcher.group(1);
+    }
 
-                if (!matcher.matches()) throw new ParseException("Could not find " + field +  " name", 0);
+    private String parseItemField(String str, String field) throws ParseException {
+        return parseItemField(str, field, "^%s: (\\S+)$");
+    }
 
-                return matcher.group(1);
-        }
+    public ItemStack getItem() {
+        return item;
+    }
 
-        private String parseItemField(String str, String field) throws ParseException {
-                return parseItemField(str, field, "^%s: (\\S+)$");
-        }
+    public List<Text> getLore() {
+        return this.lore;
+    }
 
-        public ItemStack getItem() {
-                return item;
-        }
-        public List<Text> getLore() {
-                return this.lore;
-        }
+    public Text getName() {
+        return name;
+    }
 
-        public Text getName() {
-                return name;
-        }
+    public ZonedDateTime getDateSold() {
+        return dateSold;
+    }
 
-        public ZonedDateTime getDateSold() {
-                return dateSold;
-        }
+    public ZonedDateTime getDateListed() {
+        return dateListed;
+    }
 
-        public ZonedDateTime getDateListed() {
-                return dateListed;
-        }
+    public String getSellerName() {
+        return sellerName;
+    }
 
-        public String getSellerName() {
-                return sellerName;
-        }
+    public int getAmount() {
+        return amount;
+    }
 
-        public int getAmount() {
-                return amount;
-        }
+    public double getSoldPrice() {
+        return soldPrice;
+    }
 
-        public double getSoldPrice() {
-                return soldPrice;
-        }
-        public String getBuyerName() {
-                return buyerName;
-        }
+    public String getBuyerName() {
+        return buyerName;
+    }
 }
