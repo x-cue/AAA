@@ -1,5 +1,6 @@
 package com.xcue.mixin.client;
 
+import com.xcue.mixin.client.extensions.ClientPlayerEntityExtension;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -12,9 +13,9 @@ import java.util.List;
 public class ClientPlayerEntityMixin implements ClientPlayerEntityExtension {
     @Unique
     @Override
-    public <T extends EntityType<?>> List<Entity> aAA$getNearbyEntities(Entity except, int radius, T entityType) {
+    public <T extends EntityType<?>> List<Entity> aAA$getNearbyEntities(int radius, T entityType) {
         ClientPlayerEntity p = (ClientPlayerEntity) (Object) this;
-        return p.getWorld().getOtherEntities(p, p.getBoundingBox().expand(10)).
+        return p.getWorld().getOtherEntities(p, p.getBoundingBox().expand(radius)).
                 stream()
                 .filter(x -> x.getType().equals(entityType))
                 .toList();
