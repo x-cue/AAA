@@ -47,14 +47,16 @@ public class NotAfkMod implements AAAMod {
             player.sendMessage(Text.literal("Disabled AutoClicker"));
         }));
 
-        AttackEntityCallback.EVENT.register(((player, world, hand, entity, hitResult) -> {
+        AttackEntityCallback.EVENT.register(((player1, world, hand, entity, hitResult) -> {
             // Is sword
-            ClientPlayerEntity player1 = MinecraftClient.getInstance().player;
-            if (!entity.isPlayer() && !autoClickEnabled && getCurrItem(player1)){
+            ClientPlayerEntity player = MinecraftClient.getInstance().player;
+            assert player != null;
+
+            if (!entity.isPlayer() && !autoClickEnabled && getCurrItem(player)){
                 ticks = 0;
-                if (getCurrItemHealth(player1, hand)) {
-                    player1.networkHandler.sendChatCommand("/fix");
-                    if (!getCurrItemHealth(player1, hand)) {
+                if (getCurrItemHealth(player, hand)) {
+                    player.networkHandler.sendChatCommand("/fix");
+                    if (!getCurrItemHealth(player, hand)) {
                         autoClickEnabled = true;
                         return ActionResult.PASS;
                     } else {
