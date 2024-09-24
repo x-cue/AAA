@@ -1,0 +1,67 @@
+package com.xcue.mods.notafk;
+
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
+
+// Since no access modifier (private, protected, public) was specified, this class is package-private
+// Meaning only classes in the same package can access it
+class AutoClicker {
+    private static final MinecraftClient client = MinecraftClient.getInstance();
+    private static int ticks = 0;
+    private static BlockPos playerStartingPos;
+    private static boolean enabled = false;
+
+    public static void start(ClientPlayerEntity player) {
+        ticks = 0;
+        playerStartingPos = player.getBlockPos();
+        enabled = true;
+    }
+
+    public static void stop() {
+        enabled = false;
+        playerStartingPos = null;
+    }
+
+    public static boolean isRunning() {
+        return enabled;
+    }
+
+    public static void tick() {
+        ticks++;
+
+        if (ticks % 2 == 0) {
+            // Left click again to cancel
+            if (client.mouse.wasLeftButtonClicked() && ticks != 0) {
+                stop();
+                return;
+            }
+
+            click();
+        }
+    }
+
+    public static BlockPos getPlayerStartingPos() {
+        return playerStartingPos;
+    }
+
+    public static void click() {
+        ClientPlayerEntity player = client.player;
+        if (player == null) return;
+
+        HitResult hRes = client.crosshairTarget;
+
+        if (hRes != null) {
+            if (hRes.getType() == HitResult.Type.ENTITY) {
+                Entity ent = ((EntityHitResult) hRes).getEntity();
+                client.interactionManager.attackEntity(player, ent);
+                return;
+            }
+        }
+
+        stop();
+    }
+}

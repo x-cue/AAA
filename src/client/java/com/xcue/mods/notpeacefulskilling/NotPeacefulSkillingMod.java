@@ -19,12 +19,11 @@ import java.util.List;
  * Random util to make it easier to grind
  * Hides nearby when holding tools
  */
-public class NotPeacefulSkillingMod implements AAAMod {
-    private static boolean enabled = false;
+public class NotPeacefulSkillingMod extends AAAMod {
     private static final int RADIUS = 5;
     private static List<Entity> hiddenPlayers = List.of();
-    private static List<String> keywords = List.of("hoe", "shovel", "sword", "axe");
-    private static KeyBinding keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+    private static final List<String> keywords = List.of("hoe", "shovel", "sword", "axe");
+    private static final KeyBinding keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "Toggle Nearby Players", // The translation key of the keybinding's name
             InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
             GLFW.GLFW_KEY_O, // The keycode of the key
@@ -32,53 +31,6 @@ public class NotPeacefulSkillingMod implements AAAMod {
     ));
     public static List<Entity> getHiddenPlayers() {
         return hiddenPlayers;
-    }
-
-    /**
-     *
-     * @return Whether the plugin is enabled
-     */
-    public static boolean isEnabled() {
-        return enabled;
-    }
-
-    /**
-     * Enable the plugin
-     */
-    public static void enable() {
-        enabled = false;
-
-        MinecraftClient client = MinecraftClient.getInstance();
-        ClientPlayerEntity p = client.player;
-
-        if (p == null) return;
-
-        p.sendMessage(Text.literal("Enabled Peaceful Grinding"));
-    }
-
-    /**
-     * Disable the plugin
-     */
-    public static void disable() {
-        enabled = false;
-
-        MinecraftClient client = MinecraftClient.getInstance();
-        ClientPlayerEntity p = client.player;
-
-        if (p == null) return;
-
-        p.sendMessage(Text.literal("Disabled Peaceful Grinding"));
-    }
-
-    /**
-     * Toggle the plugin on/off
-     */
-    public static void toggle() {
-        if (enabled) {
-            disable();
-        } else {
-            enable();
-        }
     }
 
     @Override
