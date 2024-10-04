@@ -1,25 +1,38 @@
 
 package com.xcue.lib;
 
+import com.xcue.lib.configuration.Config;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.text.Text;
 
+import java.util.logging.Logger;
+
 public abstract class AAAMod {
     protected boolean enabled;
-    protected MinecraftClient client;
+    protected final MinecraftClient client;
+    public final Logger logger;
+
+    public <T> T getModSetting(String key, T def) {
+        return Config.get(String.format("aaa.%s.%s", getName(), key), def);
+    }
+
+    public <T> void setModSetting(String key, T val) {
+        Config.set(String.format("aaa.%s.%s", getName(), key), val);
+    }
 
     public AAAMod() {
-        //TODO:  Extract to config
-        this.enabled = false;
+        this.enabled = getModSetting("enabled", false);
         this.client = MinecraftClient.getInstance();
+        this.logger = Logger.getLogger("aaa." + getName());
     }
+
     public boolean isEnabled() {
         return this.enabled;
     }
 
     public void enable() {
-        //TODO:  Extract to config
+        setModSetting("enabled", true);
         this.enabled = true;
 
         ClientPlayerEntity p = client.player;
@@ -29,7 +42,7 @@ public abstract class AAAMod {
     }
 
     public void disable() {
-        //TODO:  Extract to config
+        setModSetting("enabled", false);
         this.enabled = false;
 
         ClientPlayerEntity p = client.player;
@@ -37,6 +50,7 @@ public abstract class AAAMod {
 
         p.sendMessage(Text.of(String.format("Disabled %s", getName())));
     }
+
     public void toggle() {
         if (isEnabled()) {
             disable();
@@ -44,8 +58,10 @@ public abstract class AAAMod {
             enable();
         }
     }
+
     public String getName() {
-        return getClass().getName();
+        return getClass().getSimpleName().toLowerCase();
     }
+
     public abstract void init();
 }

@@ -1,5 +1,6 @@
 package com.xcue.mods.notpeacefulskilling;
 
+import com.xcue.Keybinds;
 import com.xcue.lib.AAAMod;
 import com.xcue.lib.extensions.ClientPlayerEntityExtension;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -23,20 +24,13 @@ public class NotPeacefulSkillingMod extends AAAMod {
     private static final int RADIUS = 5;
     private static List<Entity> hiddenPlayers = List.of();
     private static final List<String> keywords = List.of("hoe", "shovel", "sword", "axe");
-    private static final KeyBinding keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "Toggle Nearby Players", // The translation key of the keybinding's name
-            InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
-            GLFW.GLFW_KEY_O, // The keycode of the key
-            "AAA" // The translation key of the keybinding's category.
-    ));
     public static List<Entity> getHiddenPlayers() {
         return hiddenPlayers;
     }
-
     @Override
     public void init() {
         ClientTickEvents.END_CLIENT_TICK.register((client -> {
-            if (keyBinding.wasPressed()) toggle();
+            if (Keybinds.NOT_PEACEFUL_SKILLING.wasPressed()) toggle();
             if (!enabled) return;
 
             ClientPlayerEntity p = client.player;

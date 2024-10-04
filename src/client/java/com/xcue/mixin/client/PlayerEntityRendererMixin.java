@@ -1,7 +1,6 @@
 package com.xcue.mixin.client;
 
 import com.xcue.mods.notpeacefulskilling.NotPeacefulSkillingMod;
-import net.fabricmc.fabric.mixin.client.rendering.ArmorFeatureRendererMixin;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.LivingEntityRenderer;

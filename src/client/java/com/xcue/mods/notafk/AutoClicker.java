@@ -3,6 +3,7 @@ package com.xcue.mods.notafk;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.text.Text;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -21,9 +22,13 @@ class AutoClicker {
         enabled = true;
     }
 
-    public static void stop() {
+    public static void stop(String reason) {
         enabled = false;
         playerStartingPos = null;
+
+        if (client.player == null || reason.isBlank()) return;
+
+        client.player.sendMessage(Text.literal("(!) Stopped AutoClicker. Reason: " + reason));
     }
 
     public static boolean isRunning() {
@@ -36,7 +41,7 @@ class AutoClicker {
         if (ticks % 2 == 0) {
             // Left click again to cancel
             if (client.mouse.wasLeftButtonClicked() && ticks != 0) {
-                stop();
+                stop("Player manually stopped with left click");
                 return;
             }
 
@@ -62,6 +67,6 @@ class AutoClicker {
             }
         }
 
-        stop();
+        stop("Player is no longer looking at an entity");
     }
 }
