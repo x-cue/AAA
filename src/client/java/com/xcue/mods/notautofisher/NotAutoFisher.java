@@ -2,11 +2,14 @@ package com.xcue.mods.notautofisher;
 
 import com.xcue.Keybinds;
 import com.xcue.lib.AAAMod;
+import com.xcue.lib.TickTimer;
+import com.xcue.lib.events.island.IslandAreaFishedOutCallback;
 import com.xcue.mixin.client.FishingBobberEntityAccessorMixin;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.Items;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Hand;
 
 import java.util.Random;
@@ -16,10 +19,20 @@ public class NotAutoFisher extends AAAMod {
     boolean canReel = false;
     int castDelay = 15;
     int reelDelay = 15;
+    private final TickTimer autoCastTimer = new TickTimer();
 
     @Override
     public void init() {
         ClientTickEvents.END_CLIENT_TICK.register(this::tick);
+
+        IslandAreaFishedOutCallback.EVENT.register(() -> {
+            // Play Sound
+            assert client.player != null;
+            client.player.playSound(SoundEvents.BLOCK_ANVIL_LAND, 1, 1);
+
+            // Start Fish Timer
+            autoCastTimer.startWithSeconds(300, this::cast);
+        });
     }
 
     private void tick(MinecraftClient client) {
@@ -30,6 +43,8 @@ public class NotAutoFisher extends AAAMod {
         if (getModSetting("strict-mode", true)) {
             if (client.currentScreen instanceof HandledScreen<?>) return;
         }
+
+        autoCastTimer.tick();
 
         if (canCast) {
             // Cast Logic
@@ -71,6 +86,7 @@ public class NotAutoFisher extends AAAMod {
     }
 
     private void cast() {
+        autoCastTimer.stop();
         canCast = false;
         canReel = true;
         useRod();

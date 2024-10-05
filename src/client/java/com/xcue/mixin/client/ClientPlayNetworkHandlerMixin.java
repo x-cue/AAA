@@ -2,10 +2,12 @@ package com.xcue.mixin.client;
 
 import com.xcue.lib.events.chat.PlayerMessage;
 import com.xcue.lib.events.chat.PlayerMessageReceivedCallback;
+import com.xcue.lib.events.island.IslandAreaFishedOutCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
+import net.minecraft.sound.SoundEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,16 +20,25 @@ import java.util.regex.Pattern;
 public class ClientPlayNetworkHandlerMixin {
     @Inject(at = @At("TAIL"), method = "onGameMessage")
     public void onGameMessage(GameMessageS2CPacket packet, CallbackInfo callbackInfo) {
+        String msg = packet.content().getString();
+
         Pattern msgPattern = Pattern.compile("^\\[(\\S+)] \\[(\\S+)\\s.*](.*)$");
-        Matcher matcher = msgPattern.matcher(packet.content().getString());
+        Matcher matcher = msgPattern.matcher(msg);
         ClientPlayerEntity p = MinecraftClient.getInstance().player;
 
         if (matcher.matches()) {
             String server = matcher.group(1);
             String sender = matcher.group(2);
-            String msg = matcher.group(3);
+            String chatMsg = matcher.group(3);
 
-            PlayerMessageReceivedCallback.EVENT.invoker().interact(p, new PlayerMessage(server, sender, msg));
+            PlayerMessageReceivedCallback.EVENT.invoker().interact(p, new PlayerMessage(server, sender, chatMsg));
+        }
+
+        Pattern fishedOutPattern = Pattern.compile("^(!) It seems this area has been fished out!$");
+        Matcher fishedOutMatcher = fishedOutPattern.matcher(msg);
+
+        if (fishedOutMatcher.matches()) {
+            IslandAreaFishedOutCallback.EVENT.invoker().interact();
         }
     }
 }
