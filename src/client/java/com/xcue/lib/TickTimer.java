@@ -21,7 +21,7 @@ public class TickTimer {
     public void tick() {
         if (ticks >= 0) {
             // Run at 0 ticks left
-            if (ticks == 0) {
+            if (ticks == 0 && cb != null) {
                 cb.run();
             }
 
