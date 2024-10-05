@@ -3,7 +3,8 @@ package com.xcue;
 import com.xcue.lib.AAAMod;
 import com.xcue.lib.configuration.Config;
 import com.xcue.mods.notafk.NotAfkMod;
-import com.xcue.mods.notautofisher.NotAutoFisher;
+import com.xcue.mods.notautofisher.NotAutoFisherMod;
+import com.xcue.mods.notcaptchasolver.NotCaptchaSolverMod;
 import com.xcue.mods.notpeacefulskilling.NotPeacefulSkillingMod;
 import net.fabricmc.api.ClientModInitializer;
 import org.slf4j.Logger;
@@ -34,7 +35,8 @@ public class AAAClient implements ClientModInitializer {
 			// Reference it. Outside of these braces, you would need to type mods.add
 			add(NotAfkMod::new);
 			add(NotPeacefulSkillingMod::new);
-			add(NotAutoFisher::new);
+			add(NotAutoFisherMod::new);
+			add(NotCaptchaSolverMod::new);
 			//   ^ Shorthand lambda expression/func --> same as doing () -> new NotAfkMod()
 			// You can use lambdas like that where you reference a class and which method to call
 			// It's very useful!

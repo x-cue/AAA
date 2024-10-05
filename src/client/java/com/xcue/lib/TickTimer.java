@@ -1,5 +1,8 @@
 package com.xcue.lib;
 
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.Text;
+
 public class TickTimer {
     private Runnable cb;
     private int ticks;

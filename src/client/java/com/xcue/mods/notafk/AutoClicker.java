@@ -1,5 +1,6 @@
 package com.xcue.mods.notafk;
 
+import com.xcue.lib.Captcha;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
@@ -56,6 +57,10 @@ class AutoClicker {
     public static void click() {
         ClientPlayerEntity player = client.player;
         if (player == null) return;
+
+        if (Captcha.isOpen()) {
+            return;
+        }
 
         HitResult hRes = client.crosshairTarget;
 

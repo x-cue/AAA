@@ -2,6 +2,7 @@ package com.xcue.mods.notautofisher;
 
 import com.xcue.Keybinds;
 import com.xcue.lib.AAAMod;
+import com.xcue.lib.Captcha;
 import com.xcue.lib.TickTimer;
 import com.xcue.lib.events.island.IslandAreaFishedOutCallback;
 import com.xcue.mixin.client.FishingBobberEntityAccessorMixin;
@@ -14,7 +15,7 @@ import net.minecraft.util.Hand;
 
 import java.util.Random;
 
-public class NotAutoFisher extends AAAMod {
+public class NotAutoFisherMod extends AAAMod {
     boolean canCast = true;
     boolean canReel = false;
     int castDelay = 15;
@@ -31,7 +32,7 @@ public class NotAutoFisher extends AAAMod {
             client.player.playSound(SoundEvents.BLOCK_ANVIL_LAND, 1, 1);
 
             // Start Fish Timer
-            autoCastTimer.startWithSeconds(300, this::cast);
+            autoCastTimer.startWithSeconds(new Random().nextInt(60, 120), this::cast);
         });
     }
 
@@ -39,10 +40,10 @@ public class NotAutoFisher extends AAAMod {
         if (Keybinds.NOT_AUTO_FISHER.wasPressed()) toggle();
         if (!enabled || client.player == null) return;
 
-        // Temporary captcha detection
-        if (getModSetting("strict-mode", true)) {
-            if (client.currentScreen instanceof HandledScreen<?>) return;
-        }
+//        // Temporary captcha detection
+//        if (getModSetting("strict-mode", true)) {
+//            if (client.currentScreen instanceof HandledScreen<?>) return;
+//        }
 
         autoCastTimer.tick();
 
@@ -74,7 +75,7 @@ public class NotAutoFisher extends AAAMod {
     }
 
     public void useRod() {
-        if (client.player == null || client.interactionManager == null) return;
+        if (client.player == null || client.interactionManager == null || Captcha.isOpen()) return;
 
         if (client.player.getMainHandStack().getItem() == Items.FISHING_ROD) {
             client.player.swingHand(Hand.MAIN_HAND);

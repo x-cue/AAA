@@ -30,4 +30,10 @@ public class Keybinds {
             GLFW.GLFW_KEY_K, // The keycode of the key
             "AAA" // The translation key of the keybinding's category.
     ));
-}
+
+    public static final KeyBinding CAPTCHA_SOLVER = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "Toggle Auto-Captcha Solver", // The translation key of the keybinding's name
+            InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
+            GLFW.GLFW_KEY_SEMICOLON, // The keycode of the key
+            "AAA" // The translation key of the keybinding's category.
+    ));}

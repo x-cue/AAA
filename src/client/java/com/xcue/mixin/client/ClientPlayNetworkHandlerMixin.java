@@ -8,6 +8,7 @@ import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
 import net.minecraft.sound.SoundEvent;
+import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -34,7 +35,7 @@ public class ClientPlayNetworkHandlerMixin {
             PlayerMessageReceivedCallback.EVENT.invoker().interact(p, new PlayerMessage(server, sender, chatMsg));
         }
 
-        Pattern fishedOutPattern = Pattern.compile("^(!) It seems this area has been fished out!$");
+        Pattern fishedOutPattern = Pattern.compile("^Move to an un-fished area to continue fishing!$");
         Matcher fishedOutMatcher = fishedOutPattern.matcher(msg);
 
         if (fishedOutMatcher.matches()) {
