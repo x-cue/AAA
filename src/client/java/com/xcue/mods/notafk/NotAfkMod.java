@@ -50,7 +50,7 @@ public class NotAfkMod extends AAAMod {
             }
 
             // If AutoClicker isn't running still, we don't need to run any AutoClicker logic
-            if (!AutoClicker.isRunning()) return ActionResult.PASS;
+            if (!AutoClicker.isRunning() || !enabled) return ActionResult.PASS;
 
             // Check for sword and that it's durability is low
             if (isHoldingSword(player) && isItemLowDurability(player, hand)) {
@@ -93,14 +93,16 @@ public class NotAfkMod extends AAAMod {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (Keybinds.NOT_AFK.wasPressed()) toggle();
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
-            if (player == null || !AutoClicker.isRunning()) return;
+            if (player == null || !AutoClicker.isRunning() || !enabled) return;
 
             AutoClicker.tick();
         });
 
         PlayerMessageReceivedCallback.EVENT.register(((player, msg) -> {
-            AutoClicker.stop("Player received a message");
-            player.sendMessage(Text.literal("Disabled AutoClicker"));
+            if (AutoClicker.isRunning()) {
+                AutoClicker.stop("Player received a message");
+                player.sendMessage(Text.literal("Disabled AutoClicker"));
+            }
         }));
     }
 }

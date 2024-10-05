@@ -146,6 +146,7 @@ public final class Config {
         } else {
             logger.warning("Could not cast type " + def.getClass() + " to type of" + val + " for config " +
                     "setting " + key);
+            set(key, def);
             return def;
         }
     }
