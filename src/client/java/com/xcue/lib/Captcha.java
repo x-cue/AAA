@@ -42,7 +42,7 @@ public class Captcha {
 
         if (!matcher.matches()) {
             isOpen = false;
-            AAAClient.LOGGER.info("{} Not Matches", title.getString());
+            //AAAClient.LOGGER.info("{} Not Matches", title.getString());
         } else {
             itemToClick = matcher.group(1);
             if (client.currentScreen instanceof HandledScreen<?> screen) {

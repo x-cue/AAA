@@ -9,7 +9,6 @@ import com.xcue.lib.events.island.IslandAreaFishedOutCallback;
 import com.xcue.mixin.client.FishingBobberEntityAccessorMixin;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.Items;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Hand;
