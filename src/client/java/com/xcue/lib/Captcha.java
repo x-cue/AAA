@@ -1,21 +1,15 @@
 package com.xcue.lib;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.xcue.AAAClient;
 import com.xcue.lib.events.CaptchaSolvedCallback;
-import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.regex.Matcher;
