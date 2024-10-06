@@ -3,7 +3,9 @@ package com.xcue.lib;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.xcue.AAAClient;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -22,6 +24,7 @@ public class Captcha {
     private static TickTimer timer = new TickTimer();
     private static boolean isOpen;
     private static String itemToClick;
+    private static List<ItemStack> stacks;
 
     public static boolean isOpen() {
         return isOpen;
@@ -33,7 +36,7 @@ public class Captcha {
         if (client.currentScreen == null || client.player == null) return false;
         Text title = client.currentScreen.getTitle();
 
-        Pattern pattern = Pattern.compile("^CHALLENGE: ([\\w_]+)$");
+        Pattern pattern = Pattern.compile("^CHALLENGE: (?:Click )?([\\w_]+)$");
         Matcher matcher = pattern.matcher(title.getString());
 
         if (!matcher.matches()) {
@@ -41,8 +44,14 @@ public class Captcha {
             AAAClient.LOGGER.info("{} Not Matches", title.getString());
         } else {
             itemToClick = matcher.group(1);
-            isOpen = client.currentScreen instanceof HandledScreen<?> screen;
+            if (client.currentScreen instanceof HandledScreen<?> screen) {
+                ScreenHandler handler = screen.getScreenHandler();
+                stacks = handler.getStacks();
 
+                isOpen = true;
+            } else {
+                isOpen = false;
+            }
             AAAClient.LOGGER.info("Click {}", itemToClick);
         }
 
@@ -55,7 +64,7 @@ public class Captcha {
             // TODO play sound?
             // TODO cheater mode & highlighter?
             AAAClient.LOGGER.info("Starting Timer");
-            timer.startWithSeconds(new Random().nextInt(4, 10), Captcha::solve);
+            timer.startWithSeconds(new Random().nextInt(4, 6), Captcha::solve);
         } else if (isOpen) {
             // Not the first tick it's open
             timer.tick();
@@ -65,19 +74,20 @@ public class Captcha {
 
     public static void solve() {
         MinecraftClient client = MinecraftClient.getInstance();
+
         AAAClient.LOGGER.info("Starting Solve");
 
         if (isOpen) {
-            HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
-            ScreenHandler handler = screen.getScreenHandler();
-            List<ItemStack> stacks = handler.getStacks();
+            isOpen = false;
 
-            AAAClient.LOGGER.info("Is handled screen");
-
-            Optional<ItemStack> stack =
-                    stacks.stream().filter(x -> x.getItem().getName().getString().equalsIgnoreCase(itemToClick)).findFirst();
+            AAAClient.LOGGER.info("Captcha is open");
 
             stacks.stream().map(x -> x.getItem().getName().getLiteralString()).forEach(AAAClient.LOGGER::info);
+            stacks.stream().map(x -> x.getItem().getName().getString()).forEach(AAAClient.LOGGER::info);
+
+            Optional<ItemStack> stack =
+                    stacks.stream().filter(x -> x.getItem().getName().getString().replaceAll(" ", "_").equalsIgnoreCase(itemToClick)).findFirst();
+
             // TODO change to match *most closely*
             if (stack.isPresent()) {
                 AAAClient.LOGGER.info("Stack Present");
@@ -92,6 +102,13 @@ public class Captcha {
                 AAAClient.LOGGER.warn("AAA: Could not find stack for {}", itemToClick);
             }
             // Find the index of the item, and click that slot
+
+            // TODO Create a Debug method that logs data and (if enabled) will message the player that data
+
+            //TODO If debug mode enabled
+            //}
+        } else {
+            AAAClient.LOGGER.warn("AAA: Screen is not open...");
         }
     }
 }
