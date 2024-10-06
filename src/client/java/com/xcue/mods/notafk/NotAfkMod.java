@@ -22,6 +22,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NotAfkMod extends AAAMod {
+    private boolean fixedLastTick;
+
     private boolean isHoldingSword(ClientPlayerEntity player) {
         Item item = player.getMainHandStack().getItem();
         Pattern allowedItems = Pattern.compile("^.*Sword$");
@@ -41,6 +43,8 @@ public class NotAfkMod extends AAAMod {
     @Override
     public void init() {
         AttackEntityCallback.EVENT.register(((playerEnt, world, hand, entity, hitResult) -> {
+            fixedLastTick = false;
+
             ClientPlayerEntity player = client.player;
             assert player != null; // Asserts are dangerous, but it is ok here because the event is only called when
             // the player exists
@@ -54,24 +58,32 @@ public class NotAfkMod extends AAAMod {
 
             // Check for sword and that it's durability is low
             if (isHoldingSword(player) && isItemLowDurability(player, hand)) {
-                // Try to fix the sword
-                player.networkHandler.sendChatCommand("fix");
+                if (fixedLastTick) {
+                    fixedLastTick = false;
+                    AutoClicker.stop("No valid sword found");
+                    return ActionResult.FAIL;
+                }
 
                 // If it was not fixed, look for a new sword
                 // If none found, FAIL the attack and stop AutoClicking
-                if (isItemLowDurability(player, hand)) {
-                    for (int i = 0; i < 9; i++) {
-                        player.getInventory().scrollInHotbar(-1);
+                for (int i = 0; i < 9; i++) {
+                    player.getInventory().scrollInHotbar(-1);
 
-                        if (isHoldingSword(player) && !isItemLowDurability(player, hand)) {
-                            break;
+                    if (isHoldingSword(player) && !isItemLowDurability(player, hand)) {
+                        break;
+                    }
+
+                    // No new sword was found. Stop the AutoClicker
+                    if (i == 8) {
+                        if (!fixedLastTick) {
+                            // Try to fix the sword
+                            player.networkHandler.sendChatCommand("fix all");
+                            fixedLastTick = true;
+                            return ActionResult.PASS;
                         }
 
-                        // No new sword was found. Stop the AutoClicker
-                        if (i == 8) {
-                            AutoClicker.stop("No valid sword found");
-                            return ActionResult.FAIL;
-                        }
+                        AutoClicker.stop("No valid sword found");
+                        return ActionResult.FAIL;
                     }
                 }
             }
