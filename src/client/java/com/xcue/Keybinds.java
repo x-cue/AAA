@@ -36,4 +36,12 @@ public class Keybinds {
             InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
             GLFW.GLFW_KEY_SEMICOLON, // The keycode of the key
             "AAA" // The translation key of the keybinding's category.
-    ));}
+    ));
+
+    public static final KeyBinding NOT_AUTO_FISHER_SWAP_MODES = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "Swap AutoFish Modes", // The translation key of the keybinding's name
+            InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
+            GLFW.GLFW_KEY_COMMA, // The keycode of the key
+            "AAA" // The translation key of the keybinding's category.
+    ));
+}

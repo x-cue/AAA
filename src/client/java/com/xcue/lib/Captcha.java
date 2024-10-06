@@ -59,11 +59,11 @@ public class Captcha {
             // TODO play sound?
             // TODO cheater mode & highlighter?
             AAAClient.LOGGER.info("Starting Timer");
-            timer.startWithSeconds(new Random().nextInt(4, 10), Captcha::solve);
+            timer.startWithSeconds(new Random().nextInt(2, 9), Captcha::solve);
         } else if (isOpen) {
             // Not the first tick it's open
             timer.tick();
-            AAAClient.LOGGER.info("Ticking");
+            AAAClient.LOGGER.info("Ticking Captcha Timer");
         }
     }
 
@@ -75,9 +75,7 @@ public class Captcha {
         if (isOpen) {
             isOpen = false;
 
-            AAAClient.LOGGER.info("Captcha is open");
-
-            stacks.stream().map(x -> x.getItem().getName().getLiteralString()).forEach(AAAClient.LOGGER::info);
+            AAAClient.LOGGER.info("Captcha is open. Items:");
             stacks.stream().map(x -> x.getItem().getName().getString()).forEach(AAAClient.LOGGER::info);
 
             Optional<ItemStack> stack =
