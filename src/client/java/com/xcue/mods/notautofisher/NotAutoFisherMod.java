@@ -38,6 +38,7 @@ public class NotAutoFisherMod extends AAAMod {
 
         CaptchaSolvedCallback.EVENT.register(() -> {
            canCast = true;
+           canReel = true;
         });
     }
 

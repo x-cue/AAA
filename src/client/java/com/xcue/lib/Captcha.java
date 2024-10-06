@@ -65,7 +65,7 @@ public class Captcha {
             // TODO play sound?
             // TODO cheater mode & highlighter?
             AAAClient.LOGGER.info("Starting Timer");
-            timer.startWithSeconds(new Random().nextInt(4, 6), Captcha::solve);
+            timer.startWithSeconds(new Random().nextInt(4, 10), Captcha::solve);
         } else if (isOpen) {
             // Not the first tick it's open
             timer.tick();
