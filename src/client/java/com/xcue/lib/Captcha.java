@@ -3,6 +3,7 @@ package com.xcue.lib;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.xcue.AAAClient;
+import com.xcue.lib.events.CaptchaSolvedCallback;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
@@ -98,6 +99,8 @@ public class Captcha {
                 // Click the slot (0-indexed)
                 client.interactionManager.clickSlot(client.player.currentScreenHandler.syncId, i, 2,
                         SlotActionType.PICKUP, client.player);
+
+                CaptchaSolvedCallback.EVENT.invoker().interact();
             } else {
                 AAAClient.LOGGER.warn("AAA: Could not find stack for {}", itemToClick);
             }

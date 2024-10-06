@@ -4,6 +4,7 @@ import com.xcue.Keybinds;
 import com.xcue.lib.AAAMod;
 import com.xcue.lib.Captcha;
 import com.xcue.lib.TickTimer;
+import com.xcue.lib.events.CaptchaSolvedCallback;
 import com.xcue.lib.events.island.IslandAreaFishedOutCallback;
 import com.xcue.mixin.client.FishingBobberEntityAccessorMixin;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -33,6 +34,10 @@ public class NotAutoFisherMod extends AAAMod {
 
             // Start Fish Timer
             autoCastTimer.startWithSeconds(new Random().nextInt(60, 120), this::cast);
+        });
+
+        CaptchaSolvedCallback.EVENT.register(() -> {
+           canCast = true;
         });
     }
 
