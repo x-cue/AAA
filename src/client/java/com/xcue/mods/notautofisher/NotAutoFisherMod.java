@@ -3,12 +3,12 @@ package com.xcue.mods.notautofisher;
 import com.xcue.Keybinds;
 import com.xcue.lib.AAAMod;
 import com.xcue.lib.Captcha;
-import com.xcue.lib.TickTimer;
+import com.xcue.lib.events.CaptchaOpenedCallback;
 import com.xcue.lib.events.CaptchaSolvedCallback;
 import com.xcue.lib.events.island.IslandAreaFishedOutCallback;
 import com.xcue.mixin.client.FishingBobberEntityAccessorMixin;
-import com.xcue.mods.notautofisher.modes.FishInCircleMode;
 import com.xcue.mods.notautofisher.modes.FishInPlaceMode;
+import com.xcue.mods.notautofisher.modes.FishLeftRightMode;
 import com.xcue.mods.notautofisher.modes.NotAutoFisherMode;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
@@ -24,13 +24,12 @@ public class NotAutoFisherMod extends AAAMod {
     boolean canReel = false;
     int castDelay = 15;
     int reelDelay = 15;
-    private final TickTimer autoCastTimer = new TickTimer();
     private final Map<String, NotAutoFisherMode> modes = new HashMap<>();
     private NotAutoFisherMode mode;
 
-    private void nextMode() {
-        // TODO: Swap to next mode, then test this code.
-        // TODO:
+    public void nextMode() {
+        this.mode.stopTimer();
+
         List<NotAutoFisherMode> modes = this.modes.values().stream().toList();
         int i = modes.indexOf(this.mode);
 
@@ -65,13 +64,17 @@ public class NotAutoFisherMod extends AAAMod {
             assert client.player != null;
             client.player.playSound(SoundEvents.BLOCK_ANVIL_LAND, 1, 1);
 
-            // Start Fish Timer
-            autoCastTimer.startWithSeconds(new Random().nextInt(60, 120), this::cast);
+            this.mode.onAreaFishedOut();
+        });
+
+        CaptchaOpenedCallback.EVENT.register(() -> {
+            mode.onCaptchaOpened();
         });
 
         CaptchaSolvedCallback.EVENT.register(() -> {
-           canCast = true;
-           canReel = true;
+            canCast = true;
+            canReel = true;
+            mode.onCaptchaSolved();
         });
     }
 
@@ -79,7 +82,7 @@ public class NotAutoFisherMod extends AAAMod {
         if (Keybinds.NOT_AUTO_FISHER.wasPressed()) toggle();
         if (!enabled || client.player == null) return;
 
-        autoCastTimer.tick();
+        mode.tick();
 
         if (canCast) {
             // Cast Logic
@@ -93,7 +96,8 @@ public class NotAutoFisherMod extends AAAMod {
         if (canReel) {
             // Reel Logic
             // Fish is on hook
-            if (client.player.fishHook != null && ((FishingBobberEntityAccessorMixin) client.player.fishHook).getCaughtFish()) {
+            if (client.player.fishHook != null && ((FishingBobberEntityAccessorMixin) client.player.fishHook)
+                    .getCaughtFish()) {
                 // Reel timer is up
                 if (reelDelay == 0) {
                     reel();
@@ -120,28 +124,29 @@ public class NotAutoFisherMod extends AAAMod {
         }
     }
 
-    private void cast() {
-        autoCastTimer.stop();
+    public void cast() {
+        mode.stopTimer();
         canCast = false;
         canReel = true;
         useRod();
         castDelay = new Random().nextInt(6, 16);
     }
 
-    private void reel() {
+    public void reel() {
         canReel = false;
         canCast = true;
         useRod();
         reelDelay = new Random().nextInt(5, 10);
     }
 
-    private void registerMode(NotAutoFisherMode mode) {
+    public void registerMode(NotAutoFisherMode mode) {
         this.modes.put(mode.getConfigKey(), mode);
     }
 
     private void registerModes() {
         registerMode(new FishInPlaceMode());
-        registerMode(new FishInCircleMode());
+        //registerMode(new FishInCircleMode());
+        registerMode(new FishLeftRightMode());
     }
 
     public NotAutoFisherMode getMode() {

@@ -1,6 +1,7 @@
 package com.xcue.lib;
 
 import com.xcue.AAAClient;
+import com.xcue.lib.events.CaptchaOpenedCallback;
 import com.xcue.lib.events.CaptchaSolvedCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -55,6 +56,7 @@ public class Captcha {
 
     public static void tick() {
         if (!isOpen && isCaptchaOpen()) {
+            CaptchaOpenedCallback.EVENT.invoker().interact();
             // First tick it's open
             // TODO play sound?
             // TODO cheater mode & highlighter?

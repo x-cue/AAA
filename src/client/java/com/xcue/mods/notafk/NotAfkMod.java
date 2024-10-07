@@ -39,8 +39,7 @@ public class NotAfkMod extends AAAMod {
     @Override
     public void init() {
         AttackEntityCallback.EVENT.register(((playerEnt, world, hand, entity, hitResult) -> {
-            fixedLastTick = false;
-
+        // TODO fix all on cooldown will spam yo bitch
             ClientPlayerEntity player = client.player;
             assert player != null; // Asserts are dangerous, but it is ok here because the event is only called when
             // the player exists
