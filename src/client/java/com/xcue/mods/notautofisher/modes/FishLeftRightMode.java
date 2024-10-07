@@ -1,15 +1,29 @@
 package com.xcue.mods.notautofisher.modes;
 
 import com.xcue.AAAClient;
+
+import com.xcue.lib.Captcha;
 import com.xcue.mods.notautofisher.NotAutoFisherMod;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.network.ClientPlayerInteractionManager;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import org.lwjgl.glfw.GLFW;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 public class FishLeftRightMode extends NotAutoFisherMode {
+    private List<Integer> slotsToDrop;
     private boolean isMovingLeft = true;
 
     @Override
@@ -61,6 +75,14 @@ public class FishLeftRightMode extends NotAutoFisherMode {
             if (tryMoveLeft()) {
                 return true;
             } else {
+                // Drop inventory except fishing rod
+                List<ItemStack> invItems = MinecraftClient.getInstance().player.getInventory().main;
+                slotsToDrop =
+                        invItems.stream()
+                                .filter(x -> x.getItem() != Items.FISHING_ROD && !x.isEmpty())
+                                .map(invItems::indexOf)
+                                .collect(Collectors.toCollection(ArrayList::new));
+                slotsToDrop.forEach(x -> AAAClient.LOGGER.info("{}", x));
                 return tryMoveRight();
             }
         } else {
@@ -132,8 +154,7 @@ public class FishLeftRightMode extends NotAutoFisherMode {
         BlockPos leftBlockFeet = feetPos.offset(direction.rotateYCounterclockwise()).toImmutable();
 
         // Calculate the BlockPos to the left of the player's head
-        BlockPos leftBlockHead =
-                leftBlockFeet.up(); // Offset by one block height for the head position
+        BlockPos leftBlockHead = leftBlockFeet.up(); // Offset by one block height for the head position
 
         // Log the positions for debugging
         System.out.println("Left Block Feet: " + leftBlockFeet);
@@ -159,6 +180,44 @@ public class FishLeftRightMode extends NotAutoFisherMode {
     private void stopMovingAndCast() {
         stopMoving();
 
-        timer.startWithSeconds(1,  ((NotAutoFisherMod) AAAClient.mod("notautofishermod"))::cast);
+        timer.startWithSeconds(1, ((NotAutoFisherMod) AAAClient.mod("notautofishermod"))::cast);
+    }
+
+    private int ticks = 0;
+    private int tickInterval = 5;
+
+    @Override
+    public void tick() {
+        this.timer.tick();
+
+        ticks++;
+        if (ticks % tickInterval == 0 && slotsToDrop != null && !slotsToDrop.isEmpty() && !Captcha.isOpen()) {
+            MinecraftClient client = MinecraftClient.getInstance();
+            PlayerInventory inv = client.player.getInventory();
+            Iterator<Integer> iterator = slotsToDrop.iterator();
+            ClientPlayerInteractionManager im = client.interactionManager;
+
+            if (iterator.hasNext()) {
+                Integer slot = iterator.next();
+                ItemStack stackToDrop = inv.getStack(slot);
+
+                if (!stackToDrop.isEmpty()) {
+                    AAAClient.LOGGER.info("Dropping item from slot: {}, {}", slot, stackToDrop);
+
+                    im.clickSlot(client.player.currentScreenHandler.syncId, slot, 1, SlotActionType.THROW,
+                            client.player);
+                    iterator.remove(); // Remove after attempting to drop
+                } else {
+                    AAAClient.LOGGER.info("Item stack at {} is empty, cannot drop!", slot);
+                }
+            }
+
+            ticks = 0;
+            randomizeTickInterval();
+        }
+    }
+
+    private void randomizeTickInterval() {
+        tickInterval = 5 + new Random().nextInt(3); // Base interval of 5, random additional 0-2 ticks
     }
 }

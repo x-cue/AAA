@@ -11,7 +11,7 @@ public abstract class NotAutoFisherMode {
         this.timer.stop();
     }
 
-    public final void tick() {
+    public void tick() {
         this.timer.tick();
     }
 
