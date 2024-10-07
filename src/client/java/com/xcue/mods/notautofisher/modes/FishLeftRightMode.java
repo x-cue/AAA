@@ -35,8 +35,6 @@ public class FishLeftRightMode extends NotAutoFisherMode {
     public void onAreaFishedOut() {
         if (startMoving()) {
             timer.startWithTicks(18, this::stopMovingAndCast);
-        } else {
-            AAAClient.LOGGER.info("Player is enclosed. Stopped moving to fish.");
         }
         // If block to left, move right
         // Store boolean isMovingLeft to keep track of the line
@@ -75,14 +73,22 @@ public class FishLeftRightMode extends NotAutoFisherMode {
             if (tryMoveLeft()) {
                 return true;
             } else {
-                // Drop inventory except fishing rod
-                List<ItemStack> invItems = MinecraftClient.getInstance().player.getInventory().main;
-                slotsToDrop =
-                        invItems.stream()
-                                .filter(x -> x.getItem() != Items.FISHING_ROD && !x.isEmpty())
-                                .map(invItems::indexOf)
-                                .collect(Collectors.toCollection(ArrayList::new));
-                slotsToDrop.forEach(x -> AAAClient.LOGGER.info("{}", x));
+                if (!hasDroppedInv) {
+                    // Drop inventory except fishing rod
+                    List<ItemStack> invItems = MinecraftClient.getInstance().player.getInventory().main;
+                    slotsToDrop =
+                            invItems.stream()
+                                    .filter(x -> x.getItem() != Items.FISHING_ROD && !x.isEmpty())
+                                    .map(invItems::indexOf)
+                                    .filter(i -> i > 8)
+                                    .collect(Collectors.toCollection(ArrayList::new));
+                    slotsToDrop.forEach(x -> AAAClient.LOGGER.info("{}", x));
+
+                    return false;
+                }
+
+                hasDroppedInv = false;
+
                 return tryMoveRight();
             }
         } else {
@@ -185,7 +191,7 @@ public class FishLeftRightMode extends NotAutoFisherMode {
 
     private int ticks = 0;
     private int tickInterval = 5;
-
+    private boolean hasDroppedInv = false;
     @Override
     public void tick() {
         this.timer.tick();
@@ -214,6 +220,11 @@ public class FishLeftRightMode extends NotAutoFisherMode {
 
             ticks = 0;
             randomizeTickInterval();
+
+            if (slotsToDrop.isEmpty()) {
+                hasDroppedInv = true;
+                stopMovingAndCast();
+            }
         }
     }
 
