@@ -30,25 +30,29 @@ public class Captcha {
         MinecraftClient client = MinecraftClient.getInstance();
 
         if (client.currentScreen == null || client.player == null) return false;
-        Text title = client.currentScreen.getTitle();
+        String title = client.currentScreen.getTitle().getString();
 
-        Pattern pattern = Pattern.compile("^CHALLENGE: (?:Click )?([\\w_]+)$");
-        Matcher matcher = pattern.matcher(title.getString());
+        if (title.toLowerCase().contains("captcha") || title.toLowerCase().contains("challenge")) {
+            Pattern pattern = Pattern.compile("^.+ ([\\w_]+)$");
+            Matcher matcher = pattern.matcher(title.trim());
 
-        if (!matcher.matches()) {
-            isOpen = false;
-            //AAAClient.LOGGER.info("{} Not Matches", title.getString());
-        } else {
-            itemToClick = matcher.group(1);
-            if (client.currentScreen instanceof HandledScreen<?> screen) {
-                ScreenHandler handler = screen.getScreenHandler();
-                stacks = handler.getStacks();
-
-                isOpen = true;
-            } else {
+            if (!matcher.matches()) {
                 isOpen = false;
+                //AAAClient.LOGGER.info("{} Not Matches", title.getString());
+            } else {
+                itemToClick = matcher.group(1);
+                if (client.currentScreen instanceof HandledScreen<?> screen) {
+                    ScreenHandler handler = screen.getScreenHandler();
+                    stacks = handler.getStacks();
+
+                    isOpen = true;
+                } else {
+                    isOpen = false;
+                }
+                AAAClient.LOGGER.info("Click {}", itemToClick);
             }
-            AAAClient.LOGGER.info("Click {}", itemToClick);
+        } else {
+            isOpen = false;
         }
 
         return isOpen;

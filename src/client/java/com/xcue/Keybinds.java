@@ -44,4 +44,11 @@ public class Keybinds {
             GLFW.GLFW_KEY_COMMA, // The keycode of the key
             "AAA" // The translation key of the keybinding's category.
     ));
+
+    public static final KeyBinding NOT_AFK_STOP_ON_MSG = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "Toggle AFK Grinding On Message", // The translation key of the keybinding's name
+            InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
+            GLFW.GLFW_KEY_LEFT_BRACKET, // The keycode of the key
+            "AAA" // The translation key of the keybinding's category.
+    ));
 }

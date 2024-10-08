@@ -33,7 +33,7 @@ public class NotAfkMod extends AAAMod {
         ItemStack item = player.getStackInHand(hand);
         int durability = item.getMaxDamage() - item.getDamage();
 
-        return durability < 20;
+        return durability < 35;
     }
 
     @Override
@@ -70,17 +70,19 @@ public class NotAfkMod extends AAAMod {
 
                     // No new sword was found. Stop the AutoClicker
                     if (i == 8) {
-                        if (!fixedLastTick) {
+                        //if (!fixedLastTick) {
                             // Try to fix the sword
                             player.networkHandler.sendChatCommand("fix all");
                             fixedLastTick = true;
                             return ActionResult.PASS;
-                        }
+                        //}
 
-                        AutoClicker.stop("No valid sword found");
-                        return ActionResult.FAIL;
+                        //AutoClicker.stop("No valid sword found");
+                        //return ActionResult.FAIL;
                     }
                 }
+            } else {
+                fixedLastTick = false;
             }
 
             // If player has moved even 1 block, stop AutoClicking and FAIL the attack
@@ -99,6 +101,8 @@ public class NotAfkMod extends AAAMod {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (Keybinds.NOT_AFK.wasPressed()) toggle();
+            if (Keybinds.NOT_AFK_STOP_ON_MSG.wasPressed()) setModSetting("stop-on-msg", getModSetting("stop-on-msg",
+                    false));
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
             if (player == null || !AutoClicker.isRunning() || !enabled) return;
 
@@ -106,9 +110,9 @@ public class NotAfkMod extends AAAMod {
         });
 
         PlayerMessageReceivedCallback.EVENT.register(((player, msg) -> {
-            if (AutoClicker.isRunning()) {
+            if (AutoClicker.isRunning() && getModSetting("stop-on-msg", false)) {
                 AutoClicker.stop("Player received a message");
-                player.sendMessage(Text.literal("Disabled AutoClicker"));
+                //player.sendMessage(Text.literal("Disabled AutoClicker"));
             }
         }));
     }
