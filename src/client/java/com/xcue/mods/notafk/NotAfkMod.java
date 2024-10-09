@@ -31,9 +31,11 @@ public class NotAfkMod extends AAAMod {
 
     public boolean isItemLowDurability(ClientPlayerEntity player, Hand hand) {
         ItemStack item = player.getStackInHand(hand);
-        int durability = item.getMaxDamage() - item.getDamage();
+        double maxDurability = item.getMaxDamage();
+        double durability = maxDurability - item.getDamage();
+        double durabilityLeft = durability / maxDurability;
 
-        return durability < 35;
+        return durabilityLeft < (getModSetting("fix-at-percent", 15D) / 100);
     }
 
     @Override
@@ -101,7 +103,7 @@ public class NotAfkMod extends AAAMod {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (Keybinds.NOT_AFK.wasPressed()) toggle();
-            if (Keybinds.NOT_AFK_STOP_ON_MSG.wasPressed()) setModSetting("stop-on-msg", getModSetting("stop-on-msg",
+            if (Keybinds.NOT_AFK_STOP_ON_MSG.wasPressed()) setModSetting("stop-on-msg", !getModSetting("stop-on-msg",
                     false));
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
             if (player == null || !AutoClicker.isRunning() || !enabled) return;

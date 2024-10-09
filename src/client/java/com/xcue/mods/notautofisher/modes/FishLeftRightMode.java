@@ -209,7 +209,8 @@ public class FishLeftRightMode extends NotAutoFisherMode {
 
                 if (!stackToDrop.isEmpty()) {
                     AAAClient.LOGGER.info("Dropping item from slot: {}, {}", slot, stackToDrop);
-
+// TODO update the inventory to get the player's inventory specifically.
+                    // TODO add pet usage
                     im.clickSlot(client.player.currentScreenHandler.syncId, slot, 1, SlotActionType.THROW,
                             client.player);
                     iterator.remove(); // Remove after attempting to drop

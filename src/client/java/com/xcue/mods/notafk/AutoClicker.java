@@ -41,6 +41,9 @@ class AutoClicker {
 
         if (ticks % 2 == 0) {
             // Left click again to cancel
+            // TODO: Store a variable and make it so they have to click again after 20 ticks
+            // OR say hasReleasedClick or something like that
+            // TODO Then, update the cps to a configurable setting!
             if (client.mouse.wasLeftButtonClicked() && ticks != 0) {
                 stop("Player manually stopped with left click");
                 return;
