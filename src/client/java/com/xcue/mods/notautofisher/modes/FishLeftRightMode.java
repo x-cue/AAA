@@ -192,13 +192,38 @@ public class FishLeftRightMode extends NotAutoFisherMode {
     private int ticks = 0;
     private int tickInterval = 5;
     private boolean hasDroppedInv = false;
+    Boolean inServer = false;
+    Boolean alreadyHome = false;
+
+
     @Override
     public void tick() {
         this.timer.tick();
-
+        MinecraftClient client = MinecraftClient.getInstance();
         ticks++;
+
+        if(client.player.getMainHandStack().getItem() == Items.COMPASS && ticks % 400 == 0){
+            client.player.networkHandler.sendChatCommand("join");
+            inServer = true;
+            alreadyHome = false;
+            ticks = 0;
+        } else if (inServer && ticks % 300 == 0){
+            if(!alreadyHome) {
+                client.player.networkHandler.sendChatCommand("home");
+                alreadyHome = true;
+            } else {
+                client.player.networkHandler.sendChatCommand("home");
+                inServer = false;
+                ticks = 0;
+            }
+        } else if (!inServer && alreadyHome && ticks % 300 == 0){
+            stopMovingAndCast();
+            alreadyHome = false;
+        }
+
+
         if (ticks % tickInterval == 0 && slotsToDrop != null && !slotsToDrop.isEmpty() && !Captcha.isOpen()) {
-            MinecraftClient client = MinecraftClient.getInstance();
+//            MinecraftClient client = MinecraftClient.getInstance(); moved up
             PlayerInventory inv = client.player.getInventory();
             Iterator<Integer> iterator = slotsToDrop.iterator();
             ClientPlayerInteractionManager im = client.interactionManager;

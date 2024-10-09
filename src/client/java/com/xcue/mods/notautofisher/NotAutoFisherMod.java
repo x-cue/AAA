@@ -12,12 +12,15 @@ import com.xcue.mods.notautofisher.modes.FishLeftRightMode;
 import com.xcue.mods.notautofisher.modes.NotAutoFisherMode;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class NotAutoFisherMod extends AAAMod {
     boolean canCast = true;
@@ -26,6 +29,7 @@ public class NotAutoFisherMod extends AAAMod {
     int reelDelay = 15;
     private final Map<String, NotAutoFisherMode> modes = new HashMap<>();
     private NotAutoFisherMode mode;
+
 
     public void nextMode() {
         this.mode.stopTimer();
@@ -44,6 +48,7 @@ public class NotAutoFisherMod extends AAAMod {
         client.player.sendMessage(Text.literal("Swapped fishing to mode: " + this.mode.getConfigKey()));
     }
 
+
     @Override
     public void init() {
         registerModes();
@@ -52,6 +57,7 @@ public class NotAutoFisherMod extends AAAMod {
         this.mode = modes.get(getModSetting("mode", firstMode));
 
         ClientTickEvents.END_CLIENT_TICK.register((c) -> {
+
             if (Keybinds.NOT_AUTO_FISHER_SWAP_MODES.wasPressed()) {
                 nextMode();
             }
@@ -80,6 +86,7 @@ public class NotAutoFisherMod extends AAAMod {
 
     private void tick(MinecraftClient client) {
         if (Keybinds.NOT_AUTO_FISHER.wasPressed()) toggle();
+
         if (!enabled || client.player == null) return;
 
         mode.tick();
