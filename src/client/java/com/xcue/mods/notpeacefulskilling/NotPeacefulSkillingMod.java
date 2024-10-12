@@ -25,7 +25,7 @@ public class NotPeacefulSkillingMod extends AAAMod {
     public void init() {
         ClientTickEvents.END_CLIENT_TICK.register((client -> {
             if (Keybinds.NOT_PEACEFUL_SKILLING.wasPressed()) toggle();
-            if (!enabled) return;
+            if (!isEnabled()) return;
 
             ClientPlayerEntity p = client.player;
             if (p == null) return;

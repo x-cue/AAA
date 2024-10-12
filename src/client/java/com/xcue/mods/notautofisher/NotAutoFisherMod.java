@@ -94,7 +94,7 @@ public class NotAutoFisherMod extends AAAMod {
 
     private void tick(MinecraftClient client) {
         if (Keybinds.NOT_AUTO_FISHER.wasPressed()) toggle();
-        if (!enabled || client.player == null) return;
+        if (!isEnabled() || client.player == null) return;
 
         mode.tick();
 

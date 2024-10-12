@@ -1,8 +1,5 @@
-package com.xcue.lib.api;
-
-import com.google.gson.annotations.SerializedName;
+package com.xcue.lib.api.response;
 
 public class CheckWhitelistResult {
-    @SerializedName("is-whitelisted")
     public boolean isWhitelisted;
 }

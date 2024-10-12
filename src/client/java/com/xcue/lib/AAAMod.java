@@ -9,7 +9,7 @@ import net.minecraft.text.Text;
 import java.util.logging.Logger;
 
 public abstract class AAAMod {
-    protected boolean enabled;
+    private boolean enabled;
     protected final MinecraftClient client;
     public final Logger logger;
 
@@ -28,7 +28,7 @@ public abstract class AAAMod {
     }
 
     public boolean isEnabled() {
-        return this.enabled;
+        return Authentication.isAuthenticated() && this.enabled;
     }
 
     public void enable() {
@@ -52,7 +52,7 @@ public abstract class AAAMod {
     }
 
     public void toggle() {
-        if (isEnabled()) {
+        if (enabled) {
             disable();
         } else {
             enable();
