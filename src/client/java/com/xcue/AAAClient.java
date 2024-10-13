@@ -4,6 +4,7 @@ import com.xcue.lib.AAAMod;
 import com.xcue.lib.Authentication;
 import com.xcue.lib.api.AAApi;
 import com.xcue.lib.configuration.Config;
+import com.xcue.lib.encryption.Encryption;
 import com.xcue.mods.notafk.NotAfkMod;
 import com.xcue.mods.notautofisher.NotAutoFisherMod;
 import com.xcue.mods.notcaptchasolver.NotCaptchaSolverMod;

@@ -5,11 +5,19 @@ buildscript {
         maven {
             url = uri('https://mvnrepository.com/artifact/org.ow2.asm/asm')
         }
+
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        gradlePluginPortal()
     }
+
     dependencies {
         classpath 'org.jasypt:jasypt:1.9.3'
         classpath 'org.ow2.asm:asm:9.7.1'
         classpath 'org.ow2.asm:asm-tree:9.7.1'
+        classpath 'com.google.code.gson:gson:2.10.1'
     }
 }
 
@@ -19,11 +27,15 @@ import java.util.jar.JarEntry
 import org.jasypt.util.text.AES256TextEncryptor
 import org.objectweb.asm.*
 import org.objectweb.asm.tree.*
+import java.util.regex.Pattern
+
+// Add the pattern to match class literals
+def classLiteralPattern = Pattern.compile("^Ljava/lang/(Integer|Double|Long);\$")
 
 task encryptStrings {
-    dependsOn jar
+    dependsOn shadowJar
     doLast {
-        def jarFile = jar.archiveFile.get().asFile
+        def jarFile = shadowJar.archiveFile.get().asFile
         def encryptedJarFile = file("$buildDir/encrypted.jar")
         String key = "poopy-stinky-poop"
         AES256TextEncryptor encryptor = new AES256TextEncryptor()
@@ -36,7 +48,8 @@ task encryptStrings {
             InputStream entryInputStream = originalJar.getInputStream(entry)
             byte[] entryData = entryInputStream.bytes
 
-            if (entry.name.endsWith('.class') && !entry.name.startsWith("Encryption")) {
+            // Check if the entry is a class file and is in the com/xcue directory
+            if (entry.name.endsWith('.class') && entry.name.startsWith("com/xcue/") && !entry.name.startsWith("com/xcue/lib/encryption/")) {
                 try {
                     ClassReader classReader = new ClassReader(entryData)
                     ClassNode classNode = new ClassNode()
@@ -48,6 +61,19 @@ task encryptStrings {
                         for (AbstractInsnNode insn : instructions.toArray()) {
                             if (insn instanceof LdcInsnNode) {
                                 String originalString = insn.cst
+
+                                // Log strings in Config.class
+                                if (entry.name.endsWith("Config.class")) {
+                                    println "Found string: ${originalString}"
+                                }
+
+                                // Skip class literals
+                                if (classLiteralPattern.matcher(originalString).matches()) {
+                                    println "Skipping class literal"
+                                    continue
+                                }
+
+                                // Encrypt and replace other strings
                                 String encryptedString = encryptor.encrypt(originalString)
 
                                 // Create a new method call for decryption
@@ -81,7 +107,11 @@ task encryptStrings {
                     jos.write(modifiedEntryData)
                     jos.closeEntry()
                 } catch (Exception e) {
-                    println "Error processing class: ${entry.name} - ${e.message}"
+                    println "Error processing class: ${entry.name} - ${e.message}. Copying original file."
+                    // Write the original entry data to the new jar instead
+                    jos.putNextEntry(new JarEntry(entry.name))
+                    jos.write(entryData) // Copy original contents
+                    jos.closeEntry()
                 }
             } else {
                 // Write non-class files unchanged
@@ -95,4 +125,3 @@ task encryptStrings {
         jos.close()
     }
 }
-

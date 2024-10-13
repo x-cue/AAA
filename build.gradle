@@ -1,9 +1,11 @@
 plugins {
 	id 'fabric-loom' version '1.7-SNAPSHOT'
 	id 'maven-publish'
+	id 'com.github.johnrengelman.shadow' version '7.1.0'
 }
 
 apply from: 'encryptStrings.gradle'
+apply from: 'remapManifest.gradle'
 
 version = project.mod_version
 group = project.maven_group
@@ -67,28 +69,51 @@ java {
 	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
 	// if it is present.
 	// If you remove this line, sources will not be generated.
-	//withSourcesJar()
+	withSourcesJar()
 
 	sourceCompatibility = JavaVersion.VERSION_17
 	targetCompatibility = JavaVersion.VERSION_17
+}
+
+shadowJar {
+	archiveClassifier.set('shadow')
+
+	dependencies {
+		include(dependency("com.mojang:minecraft:${project.minecraft_version}"))
+		include(dependency("'org.jasypt:jasypt:1.9.3'"))
+		include(dependency('org.jasypt:jasypt:1.9.3'))
+	}
+
+	// Use the original JAR as the base for shadowing
+	from(tasks.jar) {
+		// This will include everything from the original JAR
+		include '**/*'
+	}
+
+	mergeServiceFiles() // Merge service files in META-INF/services
+	minimize() // Optional: remove unused classes, if desired
+
+	finalizedBy encryptStrings
+}
+
+tasks.build {
+	dependsOn shadowJar
 }
 
 jar {
 	from("LICENSE") {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
-
-	finalizedBy encryptStrings
 }
 
 task obfuscate {
-	dependsOn jar, encryptStrings // Ensure both jar and encryptStrings tasks run first
+	dependsOn encryptStrings // Ensure both jar and encryptStrings tasks run first
 	group 'yGuard'
 	description 'Obfuscates the java archive.'
 
 	doLast {
 		// Reference the main jar
-		def mainJarPath = jar.archiveFile.get().asFile.path
+		def mainJarPath = shadowJar.archiveFile.get().asFile.path
 		def unobfMainJar = mainJarPath.replace(".jar", "_unobf.jar")
 
 		// Move the main jar to a temporary unobfuscated jar
@@ -110,6 +135,9 @@ task obfuscate {
 			rename(logfile: "${buildDir}/${rootProject.name}_renamelog.xml") {
 				keep {
 					'class'(classes: 'none', methods: 'none', fields: 'none')
+					'class'(name: 'com.xcue.mixin.client.*')
+					'class'(name: 'com.xcue.AAAClient')
+					'class'(name: 'com.xcue.AAA')
 				}
 			}
 		}
@@ -131,13 +159,17 @@ task obfuscate {
 			rename(logfile: "${buildDir}/${rootProject.name}_renamelog.xml") {
 				keep {
 					'class'(classes: 'none', methods: 'none', fields: 'none')
+					'class'(name: 'com.xcue.mixin.client.*')
+					'class'(name: 'com.xcue.AAAClient')
+					'class'(name: 'com.xcue.AAA')
 				}
 			}
 		}
 	}
 }
 
-assemble.dependsOn obfuscate
+remapManifest.dependsOn obfuscate
+build.finalizedBy remapManifest
 
 // configure the maven publication
 publishing {

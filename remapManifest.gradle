@@ -1,0 +1,88 @@
+import groovy.xml.XmlSlurper
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
+import java.util.jar.JarOutputStream
+import java.util.jar.Manifest
+import java.io.FileOutputStream
+// TODO FIX BECAUSE ITS NOT MAPPING THE OBFUSCATED NAMES PROPERLY
+task remapManifest {
+    doLast {
+        def xmlFile = file("${buildDir}/AAA_renamelog.xml") // Path to your XML
+        def manifestFile = file("$buildDir/libs/${project.name}-${project.version}.jar")
+        def outputJarPath = file("$buildDir/encrypted.jar").path
+
+        println "Original JAR Manifest Path: $manifestFile"
+
+        // Read the original JAR's manifest
+        def jarInputStream = new JarFile(manifestFile)
+        def originalManifest = jarInputStream.getManifest()
+
+        // Parse the XML file
+        def xmlParser = new XmlSlurper()
+        def xml = xmlParser.parse(xmlFile)
+
+        // Create a mapping of class and method names from <map>
+        def obfuscatedMapping = [:]
+        xml.map.class.each { clazz ->
+            obfuscatedMapping[clazz.@name.text().replace('.', '/')] = clazz.@map.text()
+        }
+        xml.map.method.each { method ->
+            def methodKey = "${method.@class.text().replace('.', '/')}.${method.@name.text()}"
+            obfuscatedMapping[methodKey] = method.@map.text()
+        }
+
+        // Process the client-only entries
+        def clientOnlyEntries = originalManifest.mainAttributes.getValue('Fabric-Loom-Client-Only-Entries')
+        if (!clientOnlyEntries) {
+            println "No Client-Only Entries found."
+            return
+        }
+
+        // Split and prepare for remapping
+        def entries = clientOnlyEntries.split(';').collect { it.trim() }
+        def remappedEntries = entries.collect { entry ->
+            def entryPath = entry.replace('.', '/')
+            obfuscatedMapping.get(entryPath, entry) // Map entry if exists
+        }.unique()
+
+        // Build the new Fabric-Loom-Client-Only-Entries line
+        originalManifest.mainAttributes.putValue('Fabric-Loom-Client-Only-Entries', remappedEntries.join('; '))
+
+        // Create a temporary output JAR to write the modified contents
+        def tempJarPath = "$buildDir/temp_encrypted.jar"
+        def outputJar = new JarOutputStream(new FileOutputStream(tempJarPath))
+
+        // Write the manifest only once
+        outputJar.putNextEntry(new JarEntry("META-INF/MANIFEST.MF"))
+        originalManifest.write(outputJar)
+        outputJar.closeEntry()
+
+        // Copy existing entries from the original encrypted.jar to the new JAR
+        def existingJar = new JarFile(outputJarPath)
+        existingJar.entries().each { entry ->
+            if (!entry.isDirectory()) {
+                // Determine the name to write to based on the obfuscated mapping
+                def entryName = entry.name.replace('/', '.')
+                def mappedEntryName = obfuscatedMapping.get(entryName, entry.name)
+
+                // Ensure the entry is not the manifest
+                if (mappedEntryName != "META-INF/MANIFEST.MF") {
+                    outputJar.putNextEntry(new JarEntry(mappedEntryName))
+                    outputJar.write(existingJar.getInputStream(entry).bytes)
+                    outputJar.closeEntry()
+                    println "Copied entry: ${entry.name} as $mappedEntryName"
+                }
+            }
+        }
+
+        // Close streams
+        existingJar.close()
+        outputJar.close()
+
+        // Replace the original encrypted.jar with the updated version
+        file(outputJarPath).delete()
+        file(tempJarPath).renameTo(file(outputJarPath))
+
+        println "Remapping complete. Output JAR: $outputJarPath"
+    }
+}
