@@ -3,6 +3,8 @@ plugins {
 	id 'maven-publish'
 }
 
+apply from: 'encryptStrings.gradle'
+
 version = project.mod_version
 group = project.maven_group
 
@@ -41,6 +43,11 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+	// String encryption
+	implementation 'org.jasypt:jasypt:1.9.3'
+
+	// Obfuscation
 	yguard 'com.yworks:yguard:4.1.1'
 }
 
@@ -60,7 +67,7 @@ java {
 	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
 	// if it is present.
 	// If you remove this line, sources will not be generated.
-	withSourcesJar()
+	//withSourcesJar()
 
 	sourceCompatibility = JavaVersion.VERSION_17
 	targetCompatibility = JavaVersion.VERSION_17
@@ -70,26 +77,53 @@ jar {
 	from("LICENSE") {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
+
+	finalizedBy encryptStrings
 }
 
-task obfuscate   {
-	dependsOn jar
+task obfuscate {
+	dependsOn jar, encryptStrings // Ensure both jar and encryptStrings tasks run first
 	group 'yGuard'
 	description 'Obfuscates the java archive.'
 
 	doLast {
-		def archivePath = jar.archiveFile.get().asFile.path
-		def unobfJar = archivePath.replace(".jar", "_unobf.jar")
+		// Reference the main jar
+		def mainJarPath = jar.archiveFile.get().asFile.path
+		def unobfMainJar = mainJarPath.replace(".jar", "_unobf.jar")
 
-		ant.move(file: archivePath, tofile: unobfJar, verbose: true)
+		// Move the main jar to a temporary unobfuscated jar
+		ant.move(file: mainJarPath, tofile: unobfMainJar, verbose: true)
 
 		ant.taskdef(
 				name: 'yguard',
 				classname: 'com.yworks.yguard.YGuardTask',
 				classpath: configurations.yguard.asPath
 		)
+
+		// Obfuscate the main jar
 		ant.yguard {
-			inoutpair(in: unobfJar, out: archivePath)
+			inoutpair(in: unobfMainJar, out: mainJarPath)
+
+			// Prevent yGuard from removing "Deprecated" attributes from .class files.
+			attribute(name: "Deprecated")
+
+			rename(logfile: "${buildDir}/${rootProject.name}_renamelog.xml") {
+				keep {
+					'class'(classes: 'none', methods: 'none', fields: 'none')
+				}
+			}
+		}
+
+		// Reference the encrypted jar
+		def encryptedJarPath = file("$buildDir/encrypted.jar").path
+		def unobfEncryptedJar = encryptedJarPath.replace(".jar", "_unobf.jar")
+
+		// Move the encrypted jar to a temporary unobfuscated jar
+		ant.move(file: encryptedJarPath, tofile: unobfEncryptedJar, verbose: true)
+
+		// Obfuscate the encrypted jar
+		ant.yguard {
+			inoutpair(in: unobfEncryptedJar, out: encryptedJarPath)
 
 			// Prevent yGuard from removing "Deprecated" attributes from .class files.
 			attribute(name: "Deprecated")

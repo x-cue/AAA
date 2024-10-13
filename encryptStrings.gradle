@@ -1,0 +1,98 @@
+buildscript {
+    repositories {
+        mavenCentral()
+
+        maven {
+            url = uri('https://mvnrepository.com/artifact/org.ow2.asm/asm')
+        }
+    }
+    dependencies {
+        classpath 'org.jasypt:jasypt:1.9.3'
+        classpath 'org.ow2.asm:asm:9.7.1'
+        classpath 'org.ow2.asm:asm-tree:9.7.1'
+    }
+}
+
+import java.util.jar.JarFile
+import java.util.jar.JarOutputStream
+import java.util.jar.JarEntry
+import org.jasypt.util.text.AES256TextEncryptor
+import org.objectweb.asm.*
+import org.objectweb.asm.tree.*
+
+task encryptStrings {
+    dependsOn jar
+    doLast {
+        def jarFile = jar.archiveFile.get().asFile
+        def encryptedJarFile = file("$buildDir/encrypted.jar")
+        String key = "poopy-stinky-poop"
+        AES256TextEncryptor encryptor = new AES256TextEncryptor()
+        encryptor.setPassword(key)
+
+        JarOutputStream jos = new JarOutputStream(new FileOutputStream(encryptedJarFile))
+        JarFile originalJar = new JarFile(jarFile)
+
+        originalJar.entries().each { JarEntry entry ->
+            InputStream entryInputStream = originalJar.getInputStream(entry)
+            byte[] entryData = entryInputStream.bytes
+
+            if (entry.name.endsWith('.class') && !entry.name.startsWith("Encryption")) {
+                try {
+                    ClassReader classReader = new ClassReader(entryData)
+                    ClassNode classNode = new ClassNode()
+                    classReader.accept(classNode, 0)
+
+                    // Encrypt string literals in each method
+                    classNode.methods.each { MethodNode method ->
+                        InsnList instructions = method.instructions
+                        for (AbstractInsnNode insn : instructions.toArray()) {
+                            if (insn instanceof LdcInsnNode) {
+                                String originalString = insn.cst
+                                String encryptedString = encryptor.encrypt(originalString)
+
+                                // Create a new method call for decryption
+                                MethodInsnNode decryptCall = new MethodInsnNode(
+                                        Opcodes.INVOKESTATIC,
+                                        "com/xcue/lib/encryption/Encryption",
+                                        "decrypt",
+                                        "(Ljava/lang/String;)Ljava/lang/String;",
+                                        false
+                                )
+
+                                // Create a new LdcInsnNode for the encrypted string
+                                LdcInsnNode encryptedLdc = new LdcInsnNode(encryptedString)
+
+                                // Insert the new instructions
+                                InsnList newInstructions = new InsnList()
+                                newInstructions.add(encryptedLdc)  // Load the encrypted string
+                                newInstructions.add(decryptCall)    // Call the decrypt method
+                                instructions.insert(insn, newInstructions) // Insert before the original LdcInsnNode
+                                instructions.remove(insn)             // Remove the original LdcInsnNode
+                            }
+                        }
+                    }
+
+                    ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
+                    classNode.accept(classWriter)
+                    byte[] modifiedEntryData = classWriter.toByteArray()
+
+                    // Write modified class file to the new jar
+                    jos.putNextEntry(new JarEntry(entry.name))
+                    jos.write(modifiedEntryData)
+                    jos.closeEntry()
+                } catch (Exception e) {
+                    println "Error processing class: ${entry.name} - ${e.message}"
+                }
+            } else {
+                // Write non-class files unchanged
+                jos.putNextEntry(new JarEntry(entry.name))
+                jos.write(entryData)
+                jos.closeEntry()
+            }
+        }
+
+        originalJar.close()
+        jos.close()
+    }
+}
+
