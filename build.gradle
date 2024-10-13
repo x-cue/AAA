@@ -29,6 +29,10 @@ loom {
 	}
 }
 
+configurations {
+	yguard
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -37,7 +41,7 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	
+	yguard 'com.yworks:yguard:4.1.1'
 }
 
 processResources {
@@ -67,6 +71,39 @@ jar {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
 }
+
+task obfuscate   {
+	dependsOn jar
+	group 'yGuard'
+	description 'Obfuscates the java archive.'
+
+	doLast {
+		def archivePath = jar.archiveFile.get().asFile.path
+		def unobfJar = archivePath.replace(".jar", "_unobf.jar")
+
+		ant.move(file: archivePath, tofile: unobfJar, verbose: true)
+
+		ant.taskdef(
+				name: 'yguard',
+				classname: 'com.yworks.yguard.YGuardTask',
+				classpath: configurations.yguard.asPath
+		)
+		ant.yguard {
+			inoutpair(in: unobfJar, out: archivePath)
+
+			// Prevent yGuard from removing "Deprecated" attributes from .class files.
+			attribute(name: "Deprecated")
+
+			rename(logfile: "${buildDir}/${rootProject.name}_renamelog.xml") {
+				keep {
+					'class'(classes: 'none', methods: 'none', fields: 'none')
+				}
+			}
+		}
+	}
+}
+
+assemble.dependsOn obfuscate
 
 // configure the maven publication
 publishing {
