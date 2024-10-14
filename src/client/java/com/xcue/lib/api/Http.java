@@ -65,6 +65,7 @@ class Http {
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("Client-Sender", "AAA-fabric-mod");
         connection.setDoOutput(true);
 
         // Write the JSON input string to the connection
@@ -79,6 +80,7 @@ class Http {
         URL url = new URL(urlString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
+        connection.setRequestProperty("Client-Sender", "AAA-fabric-mod");
 
         // Check response code
         int responseCode = connection.getResponseCode();

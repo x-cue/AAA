@@ -36,7 +36,7 @@ task encryptStrings {
     dependsOn shadowJar
     doLast {
         def jarFile = shadowJar.archiveFile.get().asFile
-        def encryptedJarFile = file("$buildDir/encrypted.jar")
+        def encryptedJarFile = file("$buildDir/libs/encrypted.jar")
         String key = "poopy-stinky-poop"
         AES256TextEncryptor encryptor = new AES256TextEncryptor()
         encryptor.setPassword(key)

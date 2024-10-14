@@ -47,10 +47,10 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	// String encryption
-	implementation 'org.jasypt:jasypt:1.9.3'
+	//implementation 'org.jasypt:jasypt:1.9.3'
 
 	// Obfuscation
-	yguard 'com.yworks:yguard:4.1.1'
+	//yguard 'com.yworks:yguard:4.1.1'
 }
 
 processResources {
@@ -79,8 +79,6 @@ shadowJar {
 	archiveClassifier.set('shadow')
 
 	dependencies {
-		include(dependency("com.mojang:minecraft:${project.minecraft_version}"))
-		include(dependency("'org.jasypt:jasypt:1.9.3'"))
 		include(dependency('org.jasypt:jasypt:1.9.3'))
 	}
 
@@ -90,14 +88,24 @@ shadowJar {
 		include '**/*'
 	}
 
+	manifest {
+		from(tasks.jar.manifest)
+	}
+
 	mergeServiceFiles() // Merge service files in META-INF/services
 	minimize() // Optional: remove unused classes, if desired
 
 	finalizedBy encryptStrings
 }
 
-tasks.build {
-	dependsOn shadowJar
+// Ensure the build process includes shadowJar
+tasks.named('build').configure {
+	finalizedBy tasks.named('shadowJar')
+}
+
+// Ensure encryptStrings runs after shadowJar
+tasks.named('encryptStrings').configure {
+	dependsOn tasks.named('shadowJar')
 }
 
 jar {
@@ -167,6 +175,12 @@ task obfuscate {
 		}
 	}
 }
+
+// Disable old tasks Not in use anymore
+obfuscate.setEnabled(false)
+remapManifest.setEnabled(false)
+shadowJar.setEnabled(false)
+encryptStrings.setEnabled(false)
 
 remapManifest.dependsOn obfuscate
 build.finalizedBy remapManifest
