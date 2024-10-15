@@ -30,7 +30,7 @@ public class TickTimer {
         }
     }
 
-    public Boolean isRunning(){
+    public boolean isRunning(){
         return ticks >= 0;
     }
 }

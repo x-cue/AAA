@@ -4,7 +4,6 @@ import com.xcue.lib.Captcha;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
-import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -17,7 +16,6 @@ class AutoClicker {
     private static int ticks = 0;
     private static BlockPos playerStartingPos;
     private static boolean enabled = false;
-
 
     public static void start(ClientPlayerEntity player) {
         ticks = 0;
@@ -58,7 +56,6 @@ class AutoClicker {
     public static BlockPos getPlayerStartingPos() {
         return playerStartingPos;
     }
-
 
     public static void click() {
         ClientPlayerEntity player = client.player;

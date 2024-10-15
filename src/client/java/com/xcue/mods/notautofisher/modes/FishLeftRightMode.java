@@ -12,11 +12,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
-import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -54,8 +52,6 @@ public class FishLeftRightMode extends NotAutoFisherMode {
 
     @Override
     public void onCaptchaSolved() {
-        MinecraftClient client = MinecraftClient.getInstance();
-
         // When captcha is solved, teleport home and then cast after some ticks.
         if (client.player.getMainHandStack().getItem() == Items.FISHING_ROD || client.player.getOffHandStack().getItem() == Items.FISHING_ROD) {
             client.player.networkHandler.sendChatCommand("home");
@@ -82,7 +78,7 @@ public class FishLeftRightMode extends NotAutoFisherMode {
             } else {
                 if (!hasDroppedInv) {
                     // Drop inventory except fishing rod
-                    List<ItemStack> invItems = MinecraftClient.getInstance().player.getInventory().main;
+                    List<ItemStack> invItems = client.player.getInventory().main;
                     slotsToDrop =
                             invItems.stream()
                                     .filter(x -> x.getItem() != Items.FISHING_ROD && !x.isEmpty())
@@ -110,7 +106,7 @@ public class FishLeftRightMode extends NotAutoFisherMode {
     private boolean tryMoveLeft() {
         if (noBlocksLeft()) {
             isMovingLeft = true;
-            MinecraftClient.getInstance().options.leftKey.setPressed(true);
+            client.options.leftKey.setPressed(true);
 
             return true;
         }
@@ -121,7 +117,7 @@ public class FishLeftRightMode extends NotAutoFisherMode {
     private boolean tryMoveRight() {
         if (noBlocksRight()) {
             isMovingLeft = false;
-            MinecraftClient.getInstance().options.rightKey.setPressed(true);
+            client.options.rightKey.setPressed(true);
 
             return true;
         }
@@ -130,7 +126,6 @@ public class FishLeftRightMode extends NotAutoFisherMode {
     }
 
     private boolean noBlocksRight() {
-        MinecraftClient client = MinecraftClient.getInstance();
         World world = client.world;
         ClientPlayerEntity player = client.player;
         BlockPos feetPos = player.getBlockPos(); // Player's feet position
@@ -155,7 +150,6 @@ public class FishLeftRightMode extends NotAutoFisherMode {
 
 
     private boolean noBlocksLeft() {
-        MinecraftClient client = MinecraftClient.getInstance();
         World world = client.world;
         ClientPlayerEntity player = client.player;
         BlockPos feetPos = player.getBlockPos(); // Player's feet position
@@ -185,7 +179,6 @@ public class FishLeftRightMode extends NotAutoFisherMode {
     }
 
     private void stopMoving() {
-        MinecraftClient client = MinecraftClient.getInstance();
         client.options.leftKey.setPressed(false);
         client.options.rightKey.setPressed(false);
     }
@@ -195,27 +188,29 @@ public class FishLeftRightMode extends NotAutoFisherMode {
 
         timer.startWithSeconds(1, ((NotAutoFisherMod) AAAClient.mod("notautofishermod"))::cast);
     }
-
-    public void joinCommand(){
-            client.player.networkHandler.sendChatCommand("join");
-            inServer = false;
-            readyToFish = false;
-            isFishing = false;
+    /////////////////////////// Move / organize
+    public void joinCommand() {
+        client.player.networkHandler.sendChatCommand("join");
+        inServer = false;
+        readyToFish = false;
+        isFishing = false;
     }
-    public void homeCommand(){
-        if(!inServer){
+
+    public void homeCommand() {
+        if (!inServer) {
             inServer = true;
             client.player.networkHandler.sendChatCommand("home");
-        } else{
+        } else {
             readyToFish = true;
             client.player.networkHandler.sendChatCommand("home");
         }
     }
-    public void startFishing(){
+
+    public void startFishing() {
         isFishing = true;
         stopMovingAndCast();
     }
-
+    ///////////////////////////////////
     private int ticks = 0;
     private int tickInterval = 5;
     private boolean hasDroppedInv = false;
@@ -226,50 +221,23 @@ public class FishLeftRightMode extends NotAutoFisherMode {
         this.timer.tick();
         ticks++;
 
-        if (client.player != null && client.player.getMainHandStack().getItem() == Items.COMPASS && !timer.isRunning()){
+        // ---------Move to NotAutoRejoinMod and have an event callback-----------------------
+        // Run the if logic when player JOINS a server, rather than every tick
+        if (client.player != null && client.player.getMainHandStack().getItem() == Items.COMPASS && !timer.isRunning()) {
             client.player.sendMessage(Text.literal("Trying to join"));
-            this.timer.startWithSeconds(30,this::joinCommand);
+            this.timer.startWithSeconds(30, this::joinCommand);
 
-        } else if (client.player.getMainHandStack().getItem() == Items.FISHING_ROD && !readyToFish && !timer.isRunning()){
+        } else if (client.player.getMainHandStack().getItem() == Items.FISHING_ROD && !readyToFish && !timer.isRunning()) {
             client.player.sendMessage(Text.literal("Trying to join 1"));
-            this.timer.startWithSeconds(5,this::homeCommand);
+            this.timer.startWithSeconds(5, this::homeCommand);
 
-        } else if (client.player.getMainHandStack().getItem() == Items.FISHING_ROD && readyToFish && !isFishing && !timer.isRunning()){
+        } else if (client.player.getMainHandStack().getItem() == Items.FISHING_ROD && readyToFish && !isFishing && !timer.isRunning()) {
             client.player.sendMessage(Text.literal("Trying to join 2"));
             this.timer.startWithSeconds(5, this::startFishing);
         }
-//        if(client.player.getMainHandStack().getItem() == Items.FISHING_ROD && isFishing && ticks % 14400 == 0){
-//            isFishing = false;
-//            readyToFish = false;
-//            client.player.getInventory().scrollInHotbar(-1);
-//            activatePet = true;
-//            ticks = 0;
-//        }
-//        if(client.player.getMainHandStack().getItem() == Items.PLAYER_HEAD && activatePet && ticks % 100 == 0){
-//            client.interactionManager.interactItem(client.player, Hand.MAIN_HAND);
-//            activatePet = false;
-//            readyToSwap = true;
-//            ticks = 0;
-//        }
-//        if(client.player.getMainHandStack().getItem() != Items.PLAYER_HEAD && activatePet && ticks % 100 == 0){
-//            activatePet = false;
-//            readyToSwap = true;
-//            ticks = 0;
-//        }
-//        if(readyToSwap && !activatePet && ticks % 100 == 0){
-//            client.player.getInventory().scrollInHotbar(1);
-//            readyToFish = true;
-//            ticks = 0;
-//        }
-//        if(readyToSwap && readyToFish && ticks % 100 == 0){
-//            stopMovingAndCast();
-//            readyToSwap = false;
-//            isFishing = true;
-//            ticks = 0;
-//        }
+        // ---------------------------------
 
         if (ticks % tickInterval == 0 && slotsToDrop != null && !slotsToDrop.isEmpty() && !Captcha.isOpen()) {
-//            MinecraftClient client = MinecraftClient.getInstance(); moved up
             PlayerInventory inv = client.player.getInventory();
             Iterator<Integer> iterator = slotsToDrop.iterator();
             ClientPlayerInteractionManager im = client.interactionManager;
@@ -280,7 +248,7 @@ public class FishLeftRightMode extends NotAutoFisherMode {
 
                 if (!stackToDrop.isEmpty()) {
                     AAAClient.LOGGER.info("Dropping item from slot: {}, {}", slot, stackToDrop);
-// TODO update the inventory to get the player's inventory specifically.
+                    // TODO update the inventory to get the player's inventory specifically.
                     // TODO add pet usage
                     im.clickSlot(client.player.currentScreenHandler.syncId, slot, 1, SlotActionType.THROW,
                             client.player);
