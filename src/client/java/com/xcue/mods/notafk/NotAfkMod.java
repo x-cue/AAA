@@ -40,7 +40,7 @@ public class NotAfkMod extends AAAMod {
     @Override
     public void init() {
         AttackEntityCallback.EVENT.register(((playerEnt, world, hand, entity, hitResult) -> {
-        // TODO fix all on cooldown will spam yo bitch
+            // TODO fix all on cooldown will spam yo bitch
             ClientPlayerEntity player = client.player;
             assert player != null; // Asserts are dangerous, but it is ok here because the event is only called when
             // the player exists
@@ -54,6 +54,7 @@ public class NotAfkMod extends AAAMod {
 
             // Check for sword and that it's durability is low
             if (isHoldingSword(player) && isItemLowDurability(player, hand)) {
+                // TODO: Update to a ticktimer...
                 if (fixedLastTick) {
                     fixedLastTick = false;
                     AutoClicker.stop("No valid sword found");
@@ -71,15 +72,10 @@ public class NotAfkMod extends AAAMod {
 
                     // No new sword was found. Stop the AutoClicker
                     if (i == 8) {
-                        //if (!fixedLastTick) {
-                            // Try to fix the sword
-                            player.networkHandler.sendChatCommand("fix all");
-                            fixedLastTick = true;
-                            return ActionResult.PASS;
-                        //}
-
-                        //AutoClicker.stop("No valid sword found");
-                        //return ActionResult.FAIL;
+                        // Try to fix the sword
+                        player.networkHandler.sendChatCommand("fix all");
+                        fixedLastTick = true;
+                        return ActionResult.PASS;
                     }
                 }
             } else {
@@ -110,10 +106,10 @@ public class NotAfkMod extends AAAMod {
             AutoClicker.tick();
         });
 
-        PlayerMessageReceivedCallback.EVENT.register(((player, msg) -> {
+        PlayerMessageReceivedCallback.EVENT.register(((player, msg) ->
+        {
             if (AutoClicker.isRunning() && getModSetting("stop-on-msg", false)) {
                 AutoClicker.stop("Player received a message");
-                //player.sendMessage(Text.literal("Disabled AutoClicker"));
             }
         }));
     }

@@ -68,17 +68,24 @@ public class NotAutoFisherMod extends AAAMod {
             assert client.player != null;
             client.player.playSound(SoundEvents.BLOCK_ANVIL_LAND, 1, 1);
 
-            this.mode.onAreaFishedOut();
+            if (isEnabled()) {
+                this.mode.onAreaFishedOut();
+            }
         });
 
         CaptchaOpenedCallback.EVENT.register(() -> {
+            if (isEnabled()) {
             mode.onCaptchaOpened();
+            }
         });
 
         CaptchaSolvedCallback.EVENT.register(() -> {
             canCast = true;
             canReel = true;
-            mode.onCaptchaSolved();
+
+            if (isEnabled()) {
+                mode.onCaptchaSolved();
+            }
         });
 
         IslandRodMilestoneCallback.EVENT.register((level, attribute) -> {
@@ -97,6 +104,10 @@ public class NotAutoFisherMod extends AAAMod {
         if (!isEnabled() || client.player == null) return;
 
         mode.tick();
+// Debug
+//        if(castDelay < 0){
+//            client.player.sendMessage(Text.literal("Cast delay dropped below 0"));
+//        }
 
         if (canCast) {
             // Cast Logic

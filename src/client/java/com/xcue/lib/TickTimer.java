@@ -29,4 +29,8 @@ public class TickTimer {
             ticks--;
         }
     }
+
+    public boolean isRunning(){
+        return ticks >= 0;
+    }
 }
