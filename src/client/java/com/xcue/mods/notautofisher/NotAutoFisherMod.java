@@ -6,12 +6,16 @@ import com.xcue.lib.Captcha;
 import com.xcue.lib.events.CaptchaOpenedCallback;
 import com.xcue.lib.events.CaptchaSolvedCallback;
 import com.xcue.lib.events.island.IslandAreaFishedOutCallback;
+import com.xcue.lib.events.island.IslandRodMilestoneCallback;
 import com.xcue.mixin.client.FishingBobberEntityAccessorMixin;
 import com.xcue.mods.notautofisher.modes.FishInPlaceMode;
 import com.xcue.mods.notautofisher.modes.FishLeftRightMode;
 import com.xcue.mods.notautofisher.modes.NotAutoFisherMode;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -83,12 +87,21 @@ public class NotAutoFisherMod extends AAAMod {
                 mode.onCaptchaSolved();
             }
         });
+
+        IslandRodMilestoneCallback.EVENT.register((level, attribute) -> {
+            logger.warning("attribute: {}" + attribute);
+            String keyword = getModSetting("rod-attributes", "bonus");
+            // "catch" would match catch success and bonus catch
+
+            if (!attribute.toLowerCase().contains(keyword.toLowerCase())) {
+                swapToNextRod();
+            }
+        });
     }
 
     private void tick(MinecraftClient client) {
         if (Keybinds.NOT_AUTO_FISHER.wasPressed()) toggle();
-
-        if (!enabled || client.player == null) return;
+        if (!isEnabled() || client.player == null) return;
 
         mode.tick();
 // Debug
@@ -163,5 +176,24 @@ public class NotAutoFisherMod extends AAAMod {
 
     public NotAutoFisherMode getMode() {
         return this.mode;
+    }
+
+    public void swapToNextRod() {
+        if (client.player == null) return;
+
+        ClientPlayerEntity p = client.player;
+        PlayerInventory inv = p.getInventory();
+
+        int currentIndex = client.player.getInventory().selectedSlot;
+
+        for (int i = 1; i < 9; i++) {
+            int nextIndex = (currentIndex + i) % 9;
+            ItemStack itemStack = inv.getStack(nextIndex);
+
+            if (itemStack.getItem() == Items.FISHING_ROD) {
+                client.player.getInventory().selectedSlot = nextIndex;
+                break;
+            }
+        }
     }
 }

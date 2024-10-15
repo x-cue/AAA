@@ -3,6 +3,7 @@ package com.xcue.mixin.client;
 import com.xcue.lib.events.chat.PlayerMessage;
 import com.xcue.lib.events.chat.PlayerMessageReceivedCallback;
 import com.xcue.lib.events.island.IslandAreaFishedOutCallback;
+import com.xcue.lib.events.island.IslandRodMilestoneCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -38,6 +39,15 @@ public class ClientPlayNetworkHandlerMixin {
 
         if (fishedOutMatcher.matches()) {
             IslandAreaFishedOutCallback.EVENT.invoker().interact();
+        }
+
+        Pattern rodLevelUpPattern = Pattern.compile("^\\(!\\) Your \\w+ Fishing Rod \\(Level (\\d{1,3})\\) has gained (.+)$");
+        Matcher rodLevelUpMatcher = rodLevelUpPattern.matcher(msg);
+
+        if (rodLevelUpMatcher.matches()) {
+            int newLevel = Integer.parseInt(rodLevelUpMatcher.group(1));
+            String attributeMsg = rodLevelUpMatcher.group(2);
+            IslandRodMilestoneCallback.EVENT.invoker().interact(newLevel, attributeMsg);
         }
     }
 }
