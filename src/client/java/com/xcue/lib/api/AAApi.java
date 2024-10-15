@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class AAApi {
     private static final Gson gson = new Gson();
-    private static final String BASE_URL = "https://aaaapi.us-east-2.elasticbeanstalk.com/api";
+    private static final String BASE_URL = "https://aaa-api.us-east-2.elasticbeanstalk.com/api";
 
     public static CompletableFuture<CheckWhitelistResult> isWhitelisted(@NotNull String playerName) {
         String url = BASE_URL + "/statistics/check-whitelist/" + playerName;
