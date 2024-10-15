@@ -91,6 +91,10 @@ public class NotAutoFisherMod extends AAAMod {
 
         mode.tick();
 
+        if(castDelay < 0){
+            client.player.sendMessage(Text.literal("Cast delay dropped below 0"));
+        }
+
         if (canCast) {
             // Cast Logic
             if (client.player.fishHook == null && castDelay == 0) {

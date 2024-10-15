@@ -11,6 +11,8 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.text.Text;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
@@ -25,6 +27,11 @@ import java.util.stream.Collectors;
 public class FishLeftRightMode extends NotAutoFisherMode {
     private List<Integer> slotsToDrop;
     private boolean isMovingLeft = true;
+    MinecraftClient client = MinecraftClient.getInstance();
+    Boolean inServer = false;
+    Boolean isFishing = false;
+    Boolean readyToFish = false;
+
 
     @Override
     public String getConfigKey() {
@@ -189,38 +196,77 @@ public class FishLeftRightMode extends NotAutoFisherMode {
         timer.startWithSeconds(1, ((NotAutoFisherMod) AAAClient.mod("notautofishermod"))::cast);
     }
 
+    public void joinCommand(){
+            client.player.networkHandler.sendChatCommand("join");
+            inServer = false;
+            readyToFish = false;
+            isFishing = false;
+    }
+    public void homeCommand(){
+        if(!inServer){
+            inServer = true;
+            client.player.networkHandler.sendChatCommand("home");
+        } else{
+            readyToFish = true;
+            client.player.networkHandler.sendChatCommand("home");
+        }
+    }
+    public void startFishing(){
+        isFishing = true;
+        stopMovingAndCast();
+    }
+
     private int ticks = 0;
     private int tickInterval = 5;
     private boolean hasDroppedInv = false;
-    Boolean inServer = false;
-    Boolean alreadyHome = false;
 
 
     @Override
     public void tick() {
         this.timer.tick();
-        MinecraftClient client = MinecraftClient.getInstance();
         ticks++;
 
-        if(client.player.getMainHandStack().getItem() == Items.COMPASS && ticks % 400 == 0){
-            client.player.networkHandler.sendChatCommand("join");
-            inServer = true;
-            alreadyHome = false;
-            ticks = 0;
-        } else if (inServer && ticks % 300 == 0){
-            if(!alreadyHome) {
-                client.player.networkHandler.sendChatCommand("home");
-                alreadyHome = true;
-            } else {
-                client.player.networkHandler.sendChatCommand("home");
-                inServer = false;
-                ticks = 0;
-            }
-        } else if (!inServer && alreadyHome && ticks % 300 == 0){
-            stopMovingAndCast();
-            alreadyHome = false;
-        }
+        if (client.player != null && client.player.getMainHandStack().getItem() == Items.COMPASS && !timer.isRunning()){
+            client.player.sendMessage(Text.literal("Trying to join"));
+            this.timer.startWithSeconds(30,this::joinCommand);
 
+        } else if (client.player.getMainHandStack().getItem() == Items.FISHING_ROD && !readyToFish && !timer.isRunning()){
+            client.player.sendMessage(Text.literal("Trying to join 1"));
+            this.timer.startWithSeconds(5,this::homeCommand);
+
+        } else if (client.player.getMainHandStack().getItem() == Items.FISHING_ROD && readyToFish && !isFishing && !timer.isRunning()){
+            client.player.sendMessage(Text.literal("Trying to join 2"));
+            this.timer.startWithSeconds(5, this::startFishing);
+        }
+//        if(client.player.getMainHandStack().getItem() == Items.FISHING_ROD && isFishing && ticks % 14400 == 0){
+//            isFishing = false;
+//            readyToFish = false;
+//            client.player.getInventory().scrollInHotbar(-1);
+//            activatePet = true;
+//            ticks = 0;
+//        }
+//        if(client.player.getMainHandStack().getItem() == Items.PLAYER_HEAD && activatePet && ticks % 100 == 0){
+//            client.interactionManager.interactItem(client.player, Hand.MAIN_HAND);
+//            activatePet = false;
+//            readyToSwap = true;
+//            ticks = 0;
+//        }
+//        if(client.player.getMainHandStack().getItem() != Items.PLAYER_HEAD && activatePet && ticks % 100 == 0){
+//            activatePet = false;
+//            readyToSwap = true;
+//            ticks = 0;
+//        }
+//        if(readyToSwap && !activatePet && ticks % 100 == 0){
+//            client.player.getInventory().scrollInHotbar(1);
+//            readyToFish = true;
+//            ticks = 0;
+//        }
+//        if(readyToSwap && readyToFish && ticks % 100 == 0){
+//            stopMovingAndCast();
+//            readyToSwap = false;
+//            isFishing = true;
+//            ticks = 0;
+//        }
 
         if (ticks % tickInterval == 0 && slotsToDrop != null && !slotsToDrop.isEmpty() && !Captcha.isOpen()) {
 //            MinecraftClient client = MinecraftClient.getInstance(); moved up
