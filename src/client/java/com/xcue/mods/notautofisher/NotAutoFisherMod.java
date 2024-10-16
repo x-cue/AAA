@@ -89,17 +89,17 @@ public class NotAutoFisherMod extends AAAMod {
         });
 
         IslandRodMilestoneCallback.EVENT.register((level, attribute) -> {
-            // TODO update to togglable
             if (!getModSetting("rod-leveler-enabled", true)) return;
 
-            logger.warning("attribute: {}" + attribute);
-
-            // TODO update to comma-delimited
-            String keyword = getModSetting("rod-attributes", "bonus");
             // "catch" would match catch success and bonus catch
+            // "catch,artifact" would match artifact success, artifact rarity, catch bonus, and catch success
+            // ... So, each keyword is delimited by a comma, and if none are present, it will swap to the next rod!
+            List<String> keywords = List.of(
+                    getModSetting("rod-leveler-attribute-keyword-whitelist", new String[]{"bonus"})
+            );
 
             String attr = attribute.toLowerCase();
-            if (!attr.contains("durability") && !attr.contains(keyword.toLowerCase())) {
+            if (!attr.contains("durability") && keywords.stream().noneMatch(attr::contains)) {
                 swapToNextRod();
             }
         });

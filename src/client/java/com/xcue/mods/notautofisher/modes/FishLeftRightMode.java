@@ -87,7 +87,10 @@ public class FishLeftRightMode extends NotAutoFisherMode {
                                     .collect(Collectors.toCollection(ArrayList::new));
                     //slotsToDrop.forEach(x -> AAAClient.LOGGER.info("{}", x));
                     // TODO update item whitelist
-                    return false;
+
+                    if (!slotsToDrop.isEmpty()) {
+                        return false;
+                    }
                 }
 
                 hasDroppedInv = false;
@@ -236,10 +239,8 @@ public class FishLeftRightMode extends NotAutoFisherMode {
             this.timer.startWithSeconds(5, this::startFishing);
         }
         // ---------------------------------
-
         // TODO update to use ticktimer, because it shouldn't be in-use when its time to drop items.
-        if (slotsToDrop.isEmpty()) return;
-        if (ticks % tickInterval == 0 && slotsToDrop != null && !Captcha.isOpen()) {
+        if (ticks % tickInterval == 0 && slotsToDrop != null && !slotsToDrop.isEmpty() && !Captcha.isOpen()) {
             PlayerInventory inv = client.player.getInventory();
             Iterator<Integer> iterator = slotsToDrop.iterator();
             ClientPlayerInteractionManager im = client.interactionManager;
@@ -262,11 +263,11 @@ public class FishLeftRightMode extends NotAutoFisherMode {
 
             ticks = 0;
             randomizeTickInterval();
-        }
 
-        if (slotsToDrop.isEmpty()) {
-            hasDroppedInv = true;
-            stopMovingAndCast();
+            if (slotsToDrop.isEmpty()) {
+                hasDroppedInv = true;
+                stopMovingAndCast();
+            }
         }
     }
 
