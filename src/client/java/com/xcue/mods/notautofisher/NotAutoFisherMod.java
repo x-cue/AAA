@@ -75,7 +75,7 @@ public class NotAutoFisherMod extends AAAMod {
 
         CaptchaOpenedCallback.EVENT.register(() -> {
             if (isEnabled()) {
-            mode.onCaptchaOpened();
+                mode.onCaptchaOpened();
             }
         });
 
@@ -89,11 +89,17 @@ public class NotAutoFisherMod extends AAAMod {
         });
 
         IslandRodMilestoneCallback.EVENT.register((level, attribute) -> {
+            // TODO update to togglable
+            if (!getModSetting("rod-leveler-enabled", true)) return;
+
             logger.warning("attribute: {}" + attribute);
+
+            // TODO update to comma-delimited
             String keyword = getModSetting("rod-attributes", "bonus");
             // "catch" would match catch success and bonus catch
 
-            if (!attribute.toLowerCase().contains(keyword.toLowerCase())) {
+            String attr = attribute.toLowerCase();
+            if (!attr.contains("durability") && !attr.contains(keyword.toLowerCase())) {
                 swapToNextRod();
             }
         });
