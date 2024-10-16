@@ -99,7 +99,7 @@ public class NotAutoFisherMod extends AAAMod {
             );
 
             String attr = attribute.toLowerCase();
-            if (!attr.contains("durability") && keywords.stream().noneMatch(attr::contains)) {
+            if (!attr.contains("durability") && keywords.stream().map(String::toLowerCase).noneMatch(attr::contains)) {
                 swapToNextRod();
             }
         });
