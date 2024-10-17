@@ -45,7 +45,7 @@ class AutoClicker {
             // OR say hasReleasedClick or something like that
             // TODO Then, update the cps to a configurable setting!
             if (client.mouse.wasLeftButtonClicked() && ticks != 0) {
-                stop("Player manually stopped with left click");
+                stop("Player left clicked");
                 return;
             }
 

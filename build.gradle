@@ -1,204 +1,145 @@
 plugins {
-	id 'fabric-loom' version '1.7-SNAPSHOT'
-	id 'maven-publish'
-	id 'com.github.johnrengelman.shadow' version '7.1.0'
+    id 'fabric-loom' version '1.7-SNAPSHOT'
+    id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
 }
 
-apply from: 'encryptStrings.gradle'
-apply from: 'remapManifest.gradle'
+apply from: 'scripts/encryptStrings.gradle'
+apply from: 'scripts/remapManifest.gradle'
+apply from: 'scripts/obfuscate.gradle'
 
 version = project.mod_version
 group = project.maven_group
 
 base {
-	archivesName = project.archives_base_name
+    archivesName = project.archives_base_name
 }
 
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
+    // Add repositories to retrieve artifacts from in here.
+    // You should only use this when depending on other mods because
+    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
+    // for more information about repositories.
 }
 
 loom {
-	splitEnvironmentSourceSets()
+    splitEnvironmentSourceSets()
 
-	mods {
-		"aaa" {
-			sourceSet sourceSets.main
-			sourceSet sourceSets.client
-		}
-	}
+    mods {
+        "aaa" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
 }
 
 configurations {
-	yguard
+    yguard
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    // To change the versions see the gradle.properties file
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // Fabric API. This is technically optional, but you probably want it anyway.
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	// String encryption
-	//implementation 'org.jasypt:jasypt:1.9.3'
+    // String encryption
+    //implementation 'org.jasypt:jasypt:1.9.3'
 
-	// Obfuscation
-	//yguard 'com.yworks:yguard:4.1.1'
+    // Obfuscation
+    yguard 'com.yworks:yguard:4.1.1'
 }
 
 processResources {
-	inputs.property "version", project.version
+    inputs.property "version", project.version
 
-	filesMatching("fabric.mod.json") {
-		expand "version": project.version
-	}
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 17
+    it.options.release = 17
 }
 
 java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
+    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+    // if it is present.
+    // If you remove this line, sources will not be generated.
+    withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_17
-	targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 shadowJar {
-	archiveClassifier.set('shadow')
+    archiveClassifier.set('shadow')
 
-	dependencies {
-		include(dependency('org.jasypt:jasypt:1.9.3'))
-	}
+    dependencies {
+        include(dependency('org.jasypt:jasypt:1.9.3'))
+    }
 
-	// Use the original JAR as the base for shadowing
-	from(tasks.jar) {
-		// This will include everything from the original JAR
-		include '**/*'
-	}
+    // Use the original JAR as the base for shadowing
+    from(tasks.jar) {
+        // This will include everything from the original JAR
+        include '**/*'
+    }
 
-	manifest {
-		from(tasks.jar.manifest)
-	}
+    manifest {
+        from(tasks.jar.manifest)
+    }
 
-	mergeServiceFiles() // Merge service files in META-INF/services
-	minimize() // Optional: remove unused classes, if desired
+    mergeServiceFiles() // Merge service files in META-INF/services
+    minimize() // Optional: remove unused classes, if desired
 
-	finalizedBy encryptStrings
+    finalizedBy encryptStrings
 }
 
 // Ensure the build process includes shadowJar
 tasks.named('build').configure {
-	finalizedBy tasks.named('shadowJar')
+    finalizedBy tasks.named('shadowJar')
 }
 
 // Ensure encryptStrings runs after shadowJar
 tasks.named('encryptStrings').configure {
-	dependsOn tasks.named('shadowJar')
+    dependsOn tasks.named('shadowJar')
 }
 
 jar {
-	from("LICENSE") {
-		rename { "${it}_${project.base.archivesName.get()}"}
-	}
+    from("LICENSE") {
+        rename { "${it}_${project.base.archivesName.get()}" }
+    }
 }
 
-task obfuscate {
-	dependsOn encryptStrings // Ensure both jar and encryptStrings tasks run first
-	group 'yGuard'
-	description 'Obfuscates the java archive.'
-
-	doLast {
-		// Reference the main jar
-		def mainJarPath = shadowJar.archiveFile.get().asFile.path
-		def unobfMainJar = mainJarPath.replace(".jar", "_unobf.jar")
-
-		// Move the main jar to a temporary unobfuscated jar
-		ant.move(file: mainJarPath, tofile: unobfMainJar, verbose: true)
-
-		ant.taskdef(
-				name: 'yguard',
-				classname: 'com.yworks.yguard.YGuardTask',
-				classpath: configurations.yguard.asPath
-		)
-
-		// Obfuscate the main jar
-		ant.yguard {
-			inoutpair(in: unobfMainJar, out: mainJarPath)
-
-			// Prevent yGuard from removing "Deprecated" attributes from .class files.
-			attribute(name: "Deprecated")
-
-			rename(logfile: "${buildDir}/${rootProject.name}_renamelog.xml") {
-				keep {
-					'class'(classes: 'none', methods: 'none', fields: 'none')
-					'class'(name: 'com.xcue.mixin.client.*')
-					'class'(name: 'com.xcue.AAAClient')
-					'class'(name: 'com.xcue.AAA')
-				}
-			}
-		}
-
-		// Reference the encrypted jar
-		def encryptedJarPath = file("$buildDir/encrypted.jar").path
-		def unobfEncryptedJar = encryptedJarPath.replace(".jar", "_unobf.jar")
-
-		// Move the encrypted jar to a temporary unobfuscated jar
-		ant.move(file: encryptedJarPath, tofile: unobfEncryptedJar, verbose: true)
-
-		// Obfuscate the encrypted jar
-		ant.yguard {
-			inoutpair(in: unobfEncryptedJar, out: encryptedJarPath)
-
-			// Prevent yGuard from removing "Deprecated" attributes from .class files.
-			attribute(name: "Deprecated")
-
-			rename(logfile: "${buildDir}/${rootProject.name}_renamelog.xml") {
-				keep {
-					'class'(classes: 'none', methods: 'none', fields: 'none')
-					'class'(name: 'com.xcue.mixin.client.*')
-					'class'(name: 'com.xcue.AAAClient')
-					'class'(name: 'com.xcue.AAA')
-				}
-			}
-		}
-	}
-}
+tasks.build.dependsOn obfuscate
 
 // Disable old tasks Not in use anymore
-obfuscate.setEnabled(false)
+//obfuscate.setEnabled(false)
 remapManifest.setEnabled(false)
 shadowJar.setEnabled(false)
 encryptStrings.setEnabled(false)
 
-remapManifest.dependsOn obfuscate
-build.finalizedBy remapManifest
+//remapManifest.dependsOn obfuscate
+//build.finalizedBy remapManifest
 
 // configure the maven publication
 publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			artifactId = project.archives_base_name
-			from components.java
-		}
-	}
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
 
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-	}
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        // Add repositories to publish to here.
+        // Notice: This block does NOT have the same function as the block in the top level.
+        // The repositories here will be used for publishing your artifact, not for
+        // retrieving dependencies.
+    }
 }

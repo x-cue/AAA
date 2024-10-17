@@ -1,0 +1,74 @@
+task obfuscate {
+    //dependsOn encryptStrings // Ensure both jar and encryptStrings tasks run first
+    dependsOn jar
+    dependsOn assemble
+    group 'yGuard'
+    description 'Obfuscates the java archive.'
+
+    doLast {
+        // Reference the main jar
+        def mainJarPath = "$buildDir/libs/${project.name}-${project.version}.jar"
+        def unobfMainJar = mainJarPath.replace(".jar", "_unobf.jar")
+
+        // Move the main jar to a temporary unobfuscated jar
+        ant.move(file: mainJarPath, tofile: unobfMainJar, verbose: true)
+
+        ant.taskdef(
+                name: 'yguard',
+                classname: 'com.yworks.yguard.YGuardTask',
+                classpath: configurations.yguard.asPath
+        )
+
+        // Obfuscate the main jar
+        ant.yguard {
+            inoutpair(in: unobfMainJar, out: mainJarPath)
+
+            // Prevent yGuard from removing "Deprecated" attributes from .class files.
+            attribute(name: "Deprecated")
+
+            rename(logfile: "${buildDir}/${rootProject.name}_renamelog.xml") {
+                keep {
+                    'class'(classes: 'none', methods: 'none', fields: 'none')
+                    'class'(name: 'com.xcue.mixin.client.*')
+                    'class'(name: 'com.xcue.AAAClient')
+                    'class'(name: 'com.xcue.AAA')
+                    'method'(name: 'boolean getCaughtFish()', class: 'com.xcue.mixin.client.FishingBobberEntityAccessorMixin')
+//                    'method'(name: 'protected abstract A getModel(EquipmentSlot slot)', class: 'com.xcue.mixin.client.ArmorFeatureRendererMixin')
+//                    'method'(name: 'protected abstract void renderArmor(MatrixStack matrices, VertexConsumerProvider vertexConsumers, T entity, EquipmentSlot armorSlot, int light, A model)', class: 'com.xcue.mixin.client.ArmorFeatureRendererMixin')
+//                    'method'(name: 'private void render(MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, T livingEntity, float f, float g, float h, float j, float k, float l, CallbackInfo ci)', class: 'com.xcue.mixin.client.ArmorFeatureRendererMixin')
+                    'method'(name: 'void onGameMessage(GameMessageS2CPacket packet, CallbackInfo callbackInfo)', class: 'com.xcue.mixin.client.ClientPlayNetworkHandlerMixin')
+                    'method'(name: 'void onRender(AbstractClientPlayerEntity player, CallbackInfo ci)', class: 'com.xcue.mixin.client.ClientPlayerEntityMixin')
+                    'class'(extends: 'com.xcue.lib.AAAMod')
+
+                }
+            }
+        }
+
+        /*
+        // Reference the encrypted jar
+        def encryptedJarPath = file("$buildDir/encrypted.jar").path
+        def unobfEncryptedJar = encryptedJarPath.replace(".jar", "_unobf.jar")
+
+        // Move the encrypted jar to a temporary unobfuscated jar
+        ant.move(file: encryptedJarPath, tofile: unobfEncryptedJar, verbose: true)
+
+        // Obfuscate the encrypted jar
+
+        ant.yguard {
+            inoutpair(in: unobfEncryptedJar, out: encryptedJarPath)
+
+            // Prevent yGuard from removing "Deprecated" attributes from .class files.
+            attribute(name: "Deprecated")
+
+            rename(logfile: "${buildDir}/${rootProject.name}_renamelog.xml") {
+                keep {
+                    'class'(classes: 'none', methods: 'none', fields: 'none')
+                    'class'(name: 'com.xcue.mixin.client.*')
+                    'class'(name: 'com.xcue.AAAClient')
+                    'class'(name: 'com.xcue.AAA')
+                }
+            }
+        }
+         */
+    }
+}
