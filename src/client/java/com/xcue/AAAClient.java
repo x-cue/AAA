@@ -75,11 +75,7 @@ public class AAAClient implements ClientModInitializer {
             String address = serverInfo == null ? "unknown" : serverInfo.address;
             String playerName = p == null ? "unknown" : p.getName().getString();
 
-            AAApi.logServerJoin(address, playerName).exceptionally(ex -> {
-                LOGGER.info("Error occurred while joining server");
-                return null;
-            });
-
+            AAApi.logServerJoin(address, playerName).exceptionally(ex -> null);
             Authentication.reAuthenticate(playerName);
         });
     }
