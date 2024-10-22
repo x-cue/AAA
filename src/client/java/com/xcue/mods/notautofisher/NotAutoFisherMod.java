@@ -64,6 +64,8 @@ public class NotAutoFisherMod extends AAAMod {
         });
 
         IslandAreaFishedOutCallback.EVENT.register(() -> {
+            castAttempts = MAX_CAST_ATTEMPTS;
+
             // Play Sound
             assert client.player != null;
             client.player.playSound(SoundEvents.BLOCK_ANVIL_LAND, 1, 1);
@@ -185,5 +187,9 @@ public class NotAutoFisherMod extends AAAMod {
                 break;
             }
         }
+    }
+
+    public void resetCastAttempts() {
+        this.castAttempts = 0;
     }
 }
