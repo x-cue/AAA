@@ -24,8 +24,8 @@ import net.minecraft.util.Hand;
 import java.util.*;
 
 public class NotAutoFisherMod extends AAAMod {
-    boolean canCast = true;
-    boolean canReel = false;
+    private static final int MAX_CAST_ATTEMPTS = 3;
+    private int castAttempts = 0;
     int castDelay = 15;
     int reelDelay = 15;
     private final Map<String, NotAutoFisherMode> modes = new HashMap<>();
@@ -64,6 +64,8 @@ public class NotAutoFisherMod extends AAAMod {
         });
 
         IslandAreaFishedOutCallback.EVENT.register(() -> {
+            castAttempts = MAX_CAST_ATTEMPTS;
+
             // Play Sound
             assert client.player != null;
             client.player.playSound(SoundEvents.BLOCK_ANVIL_LAND, 1, 1);
@@ -80,8 +82,7 @@ public class NotAutoFisherMod extends AAAMod {
         });
 
         CaptchaSolvedCallback.EVENT.register(() -> {
-            canCast = true;
-            canReel = true;
+            castAttempts = 0;
 
             if (isEnabled()) {
                 mode.onCaptchaSolved();
@@ -110,36 +111,23 @@ public class NotAutoFisherMod extends AAAMod {
         if (!isEnabled() || client.player == null) return;
 
         mode.tick();
-// Debug
-//        if(castDelay < 0){
-//            client.player.sendMessage(Text.literal("Cast delay dropped below 0"));
-//        }
 
-        if (canCast) {
+        if (client.player.fishHook == null) {
             // Cast Logic
-            if (client.player.fishHook == null && castDelay == 0) {
+            if (castDelay == 0 && castAttempts < MAX_CAST_ATTEMPTS) {
                 cast();
-            } else if (client.player.fishHook == null) {
+            } else if (castDelay > 0) {
                 castDelay--;
             }
-        }
-
-        if (canReel) {
+        } else if (((FishingBobberEntityAccessorMixin) client.player.fishHook).getCaughtFish()) {
             // Reel Logic
-            // Fish is on hook
-            if (client.player.fishHook != null && ((FishingBobberEntityAccessorMixin) client.player.fishHook)
-                    .getCaughtFish()) {
-                // Reel timer is up
-                if (reelDelay == 0) {
-                    reel();
-                } else if (reelDelay > 0) {
-                    reelDelay--;
-                }
+            // (Fish is on hook)
+            // Reel timer is up
+            if (reelDelay == 0) {
+                reel();
+            } else if (reelDelay > 0) {
+                reelDelay--;
             }
-        } else if (client.player.fishHook == null) {
-            canReel = true;
-        } else {
-            canCast = true;
         }
     }
 
@@ -157,15 +145,13 @@ public class NotAutoFisherMod extends AAAMod {
 
     public void cast() {
         mode.stopTimer();
-        canCast = false;
-        canReel = true;
+        castAttempts++;
         useRod();
         castDelay = new Random().nextInt(6, 16);
     }
 
     public void reel() {
-        canReel = false;
-        canCast = true;
+        castAttempts = 0;
         useRod();
         reelDelay = new Random().nextInt(5, 10);
     }
@@ -201,5 +187,9 @@ public class NotAutoFisherMod extends AAAMod {
                 break;
             }
         }
+    }
+
+    public void resetCastAttempts() {
+        this.castAttempts = 0;
     }
 }

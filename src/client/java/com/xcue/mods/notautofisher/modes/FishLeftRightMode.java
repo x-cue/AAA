@@ -189,7 +189,8 @@ public class FishLeftRightMode extends NotAutoFisherMode {
     private void stopMovingAndCast() {
         stopMoving();
 
-        timer.startWithSeconds(1, ((NotAutoFisherMod) AAAClient.mod("notautofishermod"))::cast);
+        NotAutoFisherMod notAFMod = ((NotAutoFisherMod) AAAClient.mod("notautofishermod"));
+        timer.startWithSeconds(1, notAFMod::resetCastAttempts);
     }
     /////////////////////////// Move / organize
     public void joinCommand() {
