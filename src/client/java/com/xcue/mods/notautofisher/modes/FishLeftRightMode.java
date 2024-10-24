@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 public class FishLeftRightMode extends NotAutoFisherMode {
     private List<Integer> slotsToDrop;
     private boolean isMovingLeft = true;
+    private boolean isMovingRight = true;
     MinecraftClient client = MinecraftClient.getInstance();
     Boolean inServer = false;
     Boolean isFishing = false;
@@ -71,8 +72,36 @@ public class FishLeftRightMode extends NotAutoFisherMode {
      *
      * @return Whether the action was performed
      */
+
+
+
     private boolean startMoving() {
-        if (isMovingLeft) {
+        if (isMovingRight){
+            if(tryMoveRight()){
+                return true;
+            } else {
+                if (!hasDroppedInv) {
+                    // Drop inventory except fishing rod
+                    List<ItemStack> invItems = client.player.getInventory().main;
+                    slotsToDrop =
+                            invItems.stream()
+                                    .filter(x -> x.getItem() != Items.FISHING_ROD && !x.isEmpty())
+                                    .map(invItems::indexOf)
+                                    .filter(i -> i > 8)
+                                    .collect(Collectors.toCollection(ArrayList::new));
+                    //slotsToDrop.forEach(x -> AAAClient.LOGGER.info("{}", x));
+                    // TODO update item whitelist
+
+                    if (!slotsToDrop.isEmpty()) {
+                        return false;
+                    }
+                }
+                hasDroppedInv = false;
+
+                return tryMoveLeft();
+            }
+        }
+        else if (isMovingLeft) {
             if (tryMoveLeft()) {
                 return true;
             } else {
@@ -109,6 +138,7 @@ public class FishLeftRightMode extends NotAutoFisherMode {
     private boolean tryMoveLeft() {
         if (noBlocksLeft()) {
             isMovingLeft = true;
+            isMovingRight = false;
             client.options.leftKey.setPressed(true);
 
             return true;
@@ -120,6 +150,7 @@ public class FishLeftRightMode extends NotAutoFisherMode {
     private boolean tryMoveRight() {
         if (noBlocksRight()) {
             isMovingLeft = false;
+            isMovingRight = true;
             client.options.rightKey.setPressed(true);
 
             return true;
@@ -232,11 +263,11 @@ public class FishLeftRightMode extends NotAutoFisherMode {
             this.timer.startWithSeconds(30, this::joinCommand);
 
         } else if (client.player.getMainHandStack().getItem() == Items.FISHING_ROD && !readyToFish && !timer.isRunning()) {
-            client.player.sendMessage(Text.literal("Trying to join 1"));
+            client.player.sendMessage(Text.literal("Trying to home 1"));
             this.timer.startWithSeconds(5, this::homeCommand);
 
         } else if (client.player.getMainHandStack().getItem() == Items.FISHING_ROD && readyToFish && !isFishing && !timer.isRunning()) {
-            client.player.sendMessage(Text.literal("Trying to join 2"));
+            client.player.sendMessage(Text.literal("Trying to home 2"));
             this.timer.startWithSeconds(5, this::startFishing);
         }
         // ---------------------------------

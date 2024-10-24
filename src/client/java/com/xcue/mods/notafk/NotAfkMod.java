@@ -1,8 +1,10 @@
 package com.xcue.mods.notafk;
 
+import com.xcue.AAAClient;
 import com.xcue.Keybinds;
 import com.xcue.lib.AAAMod;
 import com.xcue.lib.events.chat.PlayerMessageReceivedCallback;
+import com.xcue.mods.notautofisher.NotAutoFisherMod;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
@@ -10,14 +12,21 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NotAfkMod extends AAAMod {
     private boolean fixedLastTick;
+    private int ticks = 0;
+    private Boolean inServer = false;
+    private Boolean readyToSwing = false;
+    private Boolean isSwinging = false;
+    private Boolean goodToClick = false;
+    private Boolean notJoinedYet = false;
 
     private boolean isHoldingSword(ClientPlayerEntity player) {
         Item item = player.getMainHandStack().getItem();
@@ -97,10 +106,56 @@ public class NotAfkMod extends AAAMod {
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            ticks++;
             if (Keybinds.NOT_AFK.wasPressed()) toggle();
             if (Keybinds.NOT_AFK_STOP_ON_MSG.wasPressed()) setModSetting("stop-on-msg", !getModSetting("stop-on-msg",
                     false));
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
+            if (player != null) {
+                if (!notJoinedYet && ticks % 300 == 0) {
+                    ticks = 0;
+                    notJoinedYet = true;
+                }
+                if (player.getMainHandStack().getItem() == Items.COMPASS && notJoinedYet && ticks % 500 == 0) {
+                    AutoClicker.stop("in hub");
+                    client.player.sendMessage(Text.literal("Trying to join"));
+                    player.networkHandler.sendChatCommand("join");
+                    inServer = false;
+                    readyToSwing = false;
+                    isSwinging = false;
+                    goodToClick = false;
+                    ticks = 0;
+                }
+                if (isHoldingSword(player) && !inServer && ticks % 100 == 0) {
+                    inServer = true;
+                }
+                if (inServer && !readyToSwing && ticks % 200 == 0) {
+                    client.player.sendMessage(Text.literal("Trying to home 1"));
+                    player.networkHandler.sendChatCommand("home");
+                }
+                if (inServer && !readyToSwing && ticks % 300 == 0) {
+                    client.player.sendMessage(Text.literal("Trying to home 2"));
+                    player.networkHandler.sendChatCommand("home");
+                    readyToSwing = true;
+                }
+                if (inServer && readyToSwing && !isSwinging && ticks % 400 == 0) {
+                    isSwinging = true;
+                    goodToClick = true;
+                    AutoClicker.start(player);
+                    ticks = 0;
+                }
+                if(isHoldingSword(player) && inServer && readyToSwing && isSwinging && ticks % 4800 == 0){
+                    client.player.sendMessage(Text.literal("Trying to start again"));
+                    AutoClicker.start(player);
+                    ticks = 0;
+                }
+            }
+
+
+
+//            if(goodToClick){
+//                    AutoClicker.tick();
+//            }
             if (player == null || !AutoClicker.isRunning() || !isEnabled()) return;
 
             AutoClicker.tick();
